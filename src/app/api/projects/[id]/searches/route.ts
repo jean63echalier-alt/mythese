@@ -45,7 +45,7 @@ export async function POST(
   }
 
   // 3. Pour chaque source : résumé + pertinence via Sonnet (parallèle, batch concis)
-  const enriched = await enrichWorks(works.slice(0, 12), payload.problematique || "");
+  const enriched = await enrichWorks(works.slice(0, 20), payload.problematique || "");
 
   // 4. Sauvegarder
   const { error: insertError } = await supabase.from("searches").insert({
