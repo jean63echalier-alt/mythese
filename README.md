@@ -1,0 +1,156 @@
+# Mythese
+
+> Le coach IA qui structure ton mémoire de recherche.
+> Sources peer-reviewed. Méthodo française. Jamais à ta place.
+
+V1 livrée nuit 2026-05-07 → 08. Stack : Next.js 15 + Tailwind v4 + Supabase + Anthropic SDK + OpenAlex + Resend.
+
+## Démarrage local
+
+```bash
+npm install
+npm run dev
+# → http://localhost:3000
+```
+
+Variables d'environnement : `.env.local` (déjà rempli avec les clés de prod).
+
+## Build / typecheck
+
+```bash
+npm run typecheck   # tsc --noEmit, doit être clean
+npm run build       # build Next.js, doit passer (14 routes)
+npm run start       # serveur production
+```
+
+## Tests smoke (pas de framework, scripts directs)
+
+```bash
+node --env-file=.env.local scripts/smoke-openalex.mjs   # OpenAlex query test
+node --env-file=.env.local scripts/smoke-anthropic.mjs  # Claude Haiku + Sonnet, JSON parsing
+```
+
+## Migrations DB
+
+```bash
+DB_PASSWORD='<supabase-db-password>' node scripts/migrate.mjs
+```
+
+Idempotentes (DROP IF EXISTS / CREATE IF NOT EXISTS partout). Si tu modifies le schéma, ajoute un `0003_*.sql` dans `supabase/migrations/` puis relance.
+
+## Déploiement Vercel
+
+1. Connecter le repo `jean63echalier-alt/mythese` à Vercel
+2. Variables d'environnement à pousser depuis `.env.local` :
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `ANTHROPIC_API_KEY`
+   - `RESEND_API_KEY`
+   - `RESEND_FROM_EMAIL`
+   - `OPENALEX_EMAIL`
+   - `NEXT_PUBLIC_SITE_URL=https://mythese.com`
+3. Domaines à attacher dans Vercel : `mythese.com` (apex) + `www.mythese.com`
+4. DNS Hostinger :
+   - `mythese.com` A → `76.76.21.21`
+   - `www.mythese.com` CNAME → `cname.vercel-dns.com`
+   - `mythese.fr` redirect 301 → `mythese.com`
+5. Dans Supabase > Authentication > URL Configuration : ajouter `https://mythese.com/auth/callback` aux Redirect URLs
+
+## Activer Google OAuth (étape manuelle Jean)
+
+Pas activé par défaut. Pour activer :
+
+1. Google Cloud Console > Créer un OAuth Client ID type "Web application"
+2. Authorized redirect URIs : `https://zheqsaeieqrpxxxuzpcf.supabase.co/auth/v1/callback`
+3. Copier Client ID + Secret
+4. Supabase > Authentication > Providers > Google : coller les deux
+
+Sans cette étape, le bouton "Continuer avec Google" affichera une erreur. Le magic link email fonctionne dès le déploiement (Supabase l'a activé par défaut).
+
+## Stack technique
+
+- Next.js 15 App Router + TypeScript strict
+- Tailwind v4 (config dans `globals.css` via `@theme`)
+- Supabase (Postgres + RLS + Auth)
+- Anthropic SDK officiel (Sonnet 4.6 + Haiku 4.5, prompt caching activé)
+- OpenAlex API (250M papers, gratuit, mailto en user-agent)
+- Resend (emails transactionnels, domaine mythese.com vérifié)
+- Vercel (deploy)
+
+## Architecture
+
+```
+src/
+  app/
+    (marketing)/         # landing publique
+      page.tsx           # hero + 3 sections + waitlist x2
+      _components/
+    (auth)/login/        # magic link + Google OAuth
+    auth/
+      callback/          # OAuth + magic link callback
+      signout/
+    app/                 # dashboard authentifié
+      layout.tsx         # protégé via middleware
+      page.tsx           # liste projets owned + memberships
+      projects/
+        new/             # création projet
+        [id]/
+          layout.tsx     # header + 4 onglets
+          page.tsx       # vue d'ensemble
+          etat-de-lart/  # Module 1 (OpenAlex + Claude)
+          problematique/ # Module 2 (8 questions + Claude)
+          equipe/        # invitations
+    invite/[token]/      # acceptation invitation
+    api/
+      waitlist/                                  # POST waitlist
+      projects/                                  # POST nouveau projet
+      projects/[id]/invitations/                 # POST invite
+      projects/[id]/searches/                    # POST recherche état art
+      projects/[id]/problematiques/              # POST génération propositions
+      problematiques/[id]/choose/                # POST choisir proposition
+      invitations/[token]/accept/                # POST accepter invitation
+    legal/               # mentions / cgu / contact (squelettes)
+  components/ui/         # Button, Input, Textarea, Label, Card, Select, Watermark
+  lib/
+    anthropic.ts         # client + system prompt + cache
+    openalex.ts          # search + normalize + APA citation
+    resend.ts            # client + templates emails (waitlist, invitation)
+    supabase/
+      client.ts          # browser
+      server.ts          # server components, RLS-aware
+      middleware.ts      # session refresh
+    utils.ts             # cn, formatDate, formatDateRelative
+  middleware.ts          # protège /app/*
+supabase/
+  migrations/
+    0001_init.sql        # 7 tables + RLS + fonctions helpers + trigger
+    0002_grants.sql      # GRANTs explicites (anon, authenticated, service_role)
+scripts/
+  migrate.mjs            # applique les migrations via pg pooler
+  smoke-openalex.mjs     # test query OpenAlex
+  smoke-anthropic.mjs    # test Haiku + Sonnet + JSON parsing
+```
+
+## Garde-fou produit (NON NÉGOCIABLE)
+
+System prompt Claude (dans `src/lib/anthropic.ts`) :
+
+1. Jamais de prose continue
+2. Toujours bullets / plans / résumés télégraphiques
+3. Refuser si l'user demande de la prose à coller
+4. Jamais hallucination de sources (uniquement OpenAlex contexte)
+5. Français académique télégraphique
+6. Watermark final : "— Suggestion Mythese à reformuler dans ton style"
+
+Watermark visible UI sur chaque card de résultat (Module 1) et chaque proposition (Module 2) via `<Watermark />`.
+
+## Roadmap nuits suivantes
+
+- **2026-05-08** : Module 3 — relecture méthodo
+- **2026-05-09** : Module 4 — biblio + exports
+- **2026-05-10** : Stripe + pricing + tests
+
+## Page wiki canonique
+
+`/Users/macbook/Documents/WikiBrain/wiki/mythese-projet.md`
