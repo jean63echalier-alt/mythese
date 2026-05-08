@@ -36,7 +36,10 @@ export async function POST(
 
   if (works.length === 0) {
     return NextResponse.json(
-      { error: "Aucun résultat OpenAlex pour cette requête. Essaie d'autres mots-clés." },
+      {
+        error:
+          "Aucun résultat OpenAlex sur cette requête. Essaie des mots-clés plus généraux ou en anglais (la plupart des publis scientifiques sont en EN).",
+      },
       { status: 404 },
     );
   }

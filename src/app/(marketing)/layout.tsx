@@ -7,6 +7,12 @@ export default function MarketingLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-2 focus:bg-[var(--color-burgundy)] focus:text-white focus:rounded"
+      >
+        Aller au contenu
+      </a>
       <header className="border-b border-[var(--color-line)] bg-[var(--color-paper)]/80 backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-5 py-4 flex items-center justify-between">
           <Link href="/" className="font-serif text-2xl font-semibold text-[var(--color-burgundy)] tracking-tight">
@@ -29,7 +35,7 @@ export default function MarketingLayout({
         </div>
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main id="main" className="flex-1">{children}</main>
 
       <footer className="border-t border-[var(--color-line)] bg-[var(--color-cream)] mt-20">
         <div className="max-w-6xl mx-auto px-5 py-10 text-sm text-[var(--color-ink-soft)] grid md:grid-cols-3 gap-8">
