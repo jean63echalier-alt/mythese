@@ -111,21 +111,58 @@ export interface OpenAlexQuery {
 
 export async function searchWorks(q: OpenAlexQuery): Promise<NormalizedWork[]> {
   const email = process.env.OPENALEX_EMAIL || "contact@mythese.com";
+  const baseFilters = [
+    "language:fr|en",
+    `from_publication_date:${q.yearFrom ?? new Date().getFullYear() - 12}-01-01`,
+    "type:article|review",
+    "has_abstract:true",
+  ];
+
+  // Stratégie : title_and_abstract.search d'abord (haute précision, peu de bruit).
+  // Si < 10 résultats, fallback sur `search` plein texte (recall plus large)
+  // et merge déduplique. Top sources strictes restent en tête.
+  const strict = await runStrictQuery(email, q.search, baseFilters);
+  let pool = strict;
+  if (strict.length < 10) {
+    const broad = await runBroadQuery(email, q.search, baseFilters);
+    const seen = new Set(strict.map((w) => w.id));
+    pool = [...strict, ...broad.filter((w) => !seen.has(w.id))];
+  }
+
+  const withAbstract = pool.filter((w) => w.abstract && w.title);
+  const withJournal = withAbstract.filter((w) => w.journal);
+  if (withJournal.length >= 12) return withJournal.slice(0, 20);
+  return [...withJournal, ...withAbstract.filter((w) => !w.journal)].slice(0, 20);
+}
+
+async function runStrictQuery(
+  email: string,
+  search: string,
+  baseFilters: string[],
+): Promise<NormalizedWork[]> {
   const params = new URLSearchParams();
-  params.set("search", q.search);
-  params.set("per_page", String(q.perPage ?? 30));
-  params.set(
-    "filter",
-    [
-      "language:fr|en",
-      `from_publication_date:${q.yearFrom ?? new Date().getFullYear() - 12}-01-01`,
-      "type:article|review",
-      "has_abstract:true",
-    ].join(","),
-  );
+  params.set("per_page", "30");
+  params.set("filter", [`title_and_abstract.search:${search}`, ...baseFilters].join(","));
   params.set("sort", "relevance_score:desc");
   params.set("mailto", email);
+  return fetchWorks(email, params);
+}
 
+async function runBroadQuery(
+  email: string,
+  search: string,
+  baseFilters: string[],
+): Promise<NormalizedWork[]> {
+  const params = new URLSearchParams();
+  params.set("search", search);
+  params.set("per_page", "30");
+  params.set("filter", baseFilters.join(","));
+  params.set("sort", "relevance_score:desc");
+  params.set("mailto", email);
+  return fetchWorks(email, params);
+}
+
+async function fetchWorks(email: string, params: URLSearchParams): Promise<NormalizedWork[]> {
   const url = `${OPENALEX_BASE}/works?${params.toString()}`;
   const res = await fetch(url, {
     headers: {
@@ -138,12 +175,5 @@ export async function searchWorks(q: OpenAlexQuery): Promise<NormalizedWork[]> {
     throw new Error(`OpenAlex error ${res.status}: ${await res.text()}`);
   }
   const data = (await res.json()) as { results: OpenAlexWork[] };
-  const works = (data.results || []).map(normalizeWork);
-  // qualité : journal connu, abstract présent, peer-reviewed
-  // Quality filter: abstract required, prefer with journal
-  const withAbstract = works.filter((w) => w.abstract && w.title);
-  const withJournal = withAbstract.filter((w) => w.journal);
-  // Prefer journals; if not enough, fill with non-journal articles
-  if (withJournal.length >= 12) return withJournal.slice(0, 20);
-  return [...withJournal, ...withAbstract.filter((w) => !w.journal)].slice(0, 20);
+  return (data.results || []).map(normalizeWork);
 }

@@ -146,8 +146,9 @@ Réponds STRICTEMENT en JSON valide, format :
 PAS de markdown, PAS de prose hors du JSON, PAS de texte avant/après le JSON.`;
 
   try {
+    // Module 1 enrich = tâche structurée (résumé + pertinence). Haiku suffit, plus rapide.
     const res = await client.messages.create({
-      model: MODELS.reasoning,
+      model: MODELS.fast,
       max_tokens: 4000,
       system: systemBlocks(),
       messages: [{ role: "user", content: userMsg }],
