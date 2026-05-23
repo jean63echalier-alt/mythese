@@ -11,6 +11,7 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
     { href: base, label: "Vue d'ensemble" },
     { href: `${base}/etat-de-lart`, label: "État de l'art" },
     { href: `${base}/problematique`, label: "Problématique" },
+    { href: `${base}/relecture-methodo`, label: "Relecture" },
     { href: `${base}/equipe`, label: "Équipe" },
   ];
 
