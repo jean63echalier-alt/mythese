@@ -1,4 +1,5 @@
 import { WaitlistForm } from "./_components/waitlist-form";
+import { PlanPreview } from "./_components/plan-preview";
 
 export default function HomePage() {
   return (
@@ -140,6 +141,20 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* PLAN DE RECHERCHE PREVIEW */}
+      <section className="py-20 bg-[var(--color-cream)] border-y border-[var(--color-line)]">
+        <div className="max-w-5xl mx-auto px-5">
+          <h2 className="font-serif text-3xl md:text-4xl font-semibold text-center mb-3">
+            Ton mémoire, en 6 étapes claires
+          </h2>
+          <p className="text-center text-[var(--color-ink-soft)] mb-12 max-w-2xl mx-auto">
+            Chaque soumission met à jour ton plan de recherche. Tu sais toujours où tu en es —
+            et où l'IA pense qu'il faut creuser.
+          </p>
+          <PlanPreview />
         </div>
       </section>
 

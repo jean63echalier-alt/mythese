@@ -100,6 +100,31 @@ export function emailInvitation(opts: {
   };
 }
 
+export const ADMIN_EMAIL =
+  process.env.ADMIN_NOTIFY_EMAIL || "jean63.echalier@gmail.com";
+
+export function emailAdminNotify(opts: {
+  subject: string;
+  lines: Array<[string, string]>;
+}) {
+  const rows = opts.lines
+    .map(
+      ([k, v]) =>
+        `<tr><td style="padding:4px 12px;color:#767676;">${escapeHtml(k)}</td><td style="padding:4px 12px;">${escapeHtml(v)}</td></tr>`,
+    )
+    .join("");
+  return {
+    to: ADMIN_EMAIL,
+    subject: `[Mythese] ${opts.subject}`,
+    html: `
+<div style="font-family: Georgia, serif; max-width: 580px; margin: 0 auto; padding: 32px 24px; color: #1a1a1a;">
+  <h1 style="font-size: 22px; color: #7b1f1f; margin: 0 0 16px;">${escapeHtml(opts.subject)}</h1>
+  <table style="border-collapse: collapse;">${rows}</table>
+</div>`,
+    text: `${opts.subject}\n\n${opts.lines.map(([k, v]) => `${k}: ${v}`).join("\n")}`,
+  };
+}
+
 function escapeHtml(s: string) {
   return s
     .replace(/&/g, "&amp;")

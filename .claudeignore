@@ -1,0 +1,89 @@
+# Build / cache
+.next/
+out/
+dist/
+build/
+.turbo/
+.vercel/
+.cache/
+.swc/
+.tsbuildinfo
+*.tsbuildinfo
+next-env.d.ts
+
+# Dependencies
+node_modules/
+.pnpm-store/
+.yarn/
+
+# Lockfiles
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Tests / coverage
+coverage/
+playwright-report/
+test-results/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+.env.production
+*.pem
+*.key
+
+# Generated
+src/generated/
+**/__generated__/
+**/*.generated.ts
+**/*.generated.tsx
+
+# Binaries / assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.avif
+*.ico
+*.svg
+*.mp4
+*.mov
+*.webm
+*.mp3
+*.wav
+*.pdf
+*.zip
+public/
+
+# DB dumps
+*.sqlite
+*.db
+
+# Supabase local artifacts (garder migrations/, ignorer le runtime)
+supabase/.branches/
+supabase/.temp/
+
+# Docs lourds
+docs/archive/
+*.min.js
+*.min.css
+*.map
+
+# Misc
+.history/
+.tmp/
+tmp/

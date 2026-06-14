@@ -14,6 +14,19 @@ export function formatDate(date: string | Date) {
   }).format(d);
 }
 
+export function parseJsonLoose(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {}
+  const match = text.match(/\{[\s\S]*\}/);
+  if (match) {
+    try {
+      return JSON.parse(match[0]);
+    } catch {}
+  }
+  return null;
+}
+
 export function formatDateRelative(date: string | Date) {
   const d = typeof date === "string" ? new Date(date) : date;
   const diffMs = Date.now() - d.getTime();

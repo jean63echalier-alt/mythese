@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { sendEmail, emailInvitation } from "@/lib/resend";
+import { sendEmail, emailInvitation, emailAdminNotify } from "@/lib/resend";
 
 const Body = z.object({
   email: z.string().email().max(200),
@@ -74,6 +74,18 @@ export async function POST(
       inviteUrl,
     }),
   ).catch((e) => console.error("invite email send", e));
+
+  sendEmail(
+    emailAdminNotify({
+      subject: "Invitation envoyée",
+      lines: [
+        ["Projet", project.title],
+        ["Invité", payload.email],
+        ["Rôle", payload.role],
+        ["Par", user.email ?? user.id],
+      ],
+    }),
+  ).catch((e) => console.error("invite admin notify error", e));
 
   return NextResponse.json({ ok: true, id: invite.id });
 }

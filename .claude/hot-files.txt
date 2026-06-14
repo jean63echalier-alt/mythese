@@ -1,0 +1,46 @@
+# Hot files MyThese — lire AVANT toute modification d'architecture
+# Format : un chemin/glob par ligne. < 30 entrées (sinon = tout est hot).
+
+# Conventions & contrats
+CLAUDE.md
+DECISIONS.md
+README.md
+PROGRESS.md
+
+# Data layer Supabase (clients + RLS)
+src/lib/supabase/client.ts
+src/lib/supabase/server.ts
+src/lib/supabase/middleware.ts
+
+# Schema DB (canonique)
+supabase/migrations/0001_init.sql
+supabase/migrations/0002_grants.sql
+supabase/migrations/0003_owner_as_author.sql
+
+# Modules AI
+src/lib/anthropic.ts
+src/lib/openalex.ts
+src/lib/resend.ts
+
+# Auth & middleware
+middleware.ts
+src/app/(auth)/login/page.tsx
+src/app/auth/callback/route.ts
+
+# Layout & providers
+src/app/layout.tsx
+
+# API routes (mutations actuelles — surveiller migration vers Server Actions)
+src/app/api/projects/route.ts
+src/app/api/problematiques/route.ts
+src/app/api/invitations/route.ts
+src/app/api/waitlist/route.ts
+
+# UI primitives (ne pas modifier directement)
+src/components/ui/
+
+# Config
+next.config.ts
+tsconfig.json
+package.json
+postcss.config.mjs

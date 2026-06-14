@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
-import { sendEmail, emailWaitlistConfirm } from "@/lib/resend";
+import { sendEmail, emailWaitlistConfirm, emailAdminNotify } from "@/lib/resend";
 
 const Body = z.object({
   email: z.string().email().max(200),
@@ -43,6 +43,18 @@ export async function POST(req: Request) {
   sendEmail(emailWaitlistConfirm({ email: payload.email })).catch((e) =>
     console.error("waitlist email send error", e),
   );
+
+  // Notify admin of new signup (best-effort, don't block)
+  sendEmail(
+    emailAdminNotify({
+      subject: "Nouvelle inscription waitlist",
+      lines: [
+        ["Email", payload.email],
+        ["Niveau", payload.level ?? "-"],
+        ["Sujet", payload.topic ?? "-"],
+      ],
+    }),
+  ).catch((e) => console.error("waitlist admin notify error", e));
 
   return NextResponse.json({ ok: true });
 }

@@ -22,6 +22,12 @@ export default async function AppLayout({
             Mythèse
           </Link>
           <div className="flex items-center gap-4 text-sm">
+            <Link href="/app/plan" className="text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">
+              Plan de recherche
+            </Link>
+            <Link href="/app" className="text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hidden sm:block">
+              Mes projets
+            </Link>
             <span className="text-[var(--color-ink-muted)] hidden md:block">
               {user.email}
             </span>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { sendEmail, emailAdminNotify } from "@/lib/resend";
 
 export async function POST(
   request: Request,
@@ -44,6 +45,17 @@ export async function POST(
     accepted_at: new Date().toISOString(),
     accepted_by: user.id,
   }).eq("id", invite.id);
+
+  sendEmail(
+    emailAdminNotify({
+      subject: "Invitation acceptée",
+      lines: [
+        ["Projet", invite.project_id],
+        ["Rôle", invite.role],
+        ["Utilisateur", user.email ?? user.id],
+      ],
+    }),
+  ).catch((e) => console.error("invite accept admin notify error", e));
 
   return NextResponse.redirect(`${origin}/app/projects/${invite.project_id}`, { status: 303 });
 }

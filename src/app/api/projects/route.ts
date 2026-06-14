@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmail, emailAdminNotify } from "@/lib/resend";
 
 const Body = z.object({
   title: z.string().min(2).max(200),
@@ -37,6 +38,18 @@ export async function POST(req: Request) {
     console.error("project create error", error);
     return NextResponse.json({ error: "Erreur création" }, { status: 500 });
   }
+
+  sendEmail(
+    emailAdminNotify({
+      subject: "Nouveau projet créé",
+      lines: [
+        ["Titre", payload.title],
+        ["Niveau", payload.level],
+        ["Discipline", payload.discipline ?? "-"],
+        ["Utilisateur", user.email ?? user.id],
+      ],
+    }),
+  ).catch((e) => console.error("project admin notify error", e));
 
   return NextResponse.json({ id: data.id });
 }

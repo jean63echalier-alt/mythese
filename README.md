@@ -46,6 +46,7 @@ Idempotentes (DROP IF EXISTS / CREATE IF NOT EXISTS partout). Si tu modifies le 
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `ANTHROPIC_API_KEY`
+   - `OPENAI_API_KEY` (conseil IA croisé, Plan de recherche)
    - `RESEND_API_KEY`
    - `RESEND_FROM_EMAIL`
    - `OPENALEX_EMAIL`
@@ -91,8 +92,11 @@ src/
       callback/          # OAuth + magic link callback
       signout/
     app/                 # dashboard authentifié
-      layout.tsx         # protégé via middleware
+      layout.tsx         # protégé via middleware, nav "Plan de recherche" / "Mes projets"
       page.tsx           # liste projets owned + memberships
+      plan/              # Plan de recherche (6 étapes, par compte)
+        page.tsx         # progression globale + timeline + soumission libre
+        [etapeId]/       # détail étape : soumission, historique, conseil IA croisé
       projects/
         new/             # création projet
         [id]/
@@ -103,6 +107,8 @@ src/
           equipe/        # invitations
     invite/[token]/      # acceptation invitation
     api/
+      plan/classifier/                           # POST contenu (texte/PDF/DOCX) -> classification étape(s)
+      plan/conseil-ia/                           # POST {etape_id, texte_soumis, question} -> Claude+GPT+synthèse
       waitlist/                                  # POST waitlist
       projects/                                  # POST nouveau projet
       projects/[id]/invitations/                 # POST invite
@@ -114,8 +120,16 @@ src/
   components/ui/         # Button, Input, Textarea, Label, Card, Select, Watermark
   lib/
     anthropic.ts         # client + system prompt + cache
+    openai.ts            # client GPT (conseil croisé)
     openalex.ts          # search + normalize + APA citation
     resend.ts            # client + templates emails (waitlist, invitation)
+    plan.ts              # étapes, statuts, prompts classification/conseil/synthèse
+    extractors/          # fichier -> texte brut (interface commune)
+      index.ts           # registre + extractText()
+      text.ts            # V1 — texte collé
+      pdf.ts             # V1 — pdf-parse
+      docx.ts            # V1 — mammoth
+                          # V2 (à brancher sans réécriture) : image (OCR), audio (Whisper)
     supabase/
       client.ts          # browser
       server.ts          # server components, RLS-aware
@@ -126,6 +140,9 @@ supabase/
   migrations/
     0001_init.sql        # 7 tables + RLS + fonctions helpers + trigger
     0002_grants.sql      # GRANTs explicites (anon, authenticated, service_role)
+    0003_owner_as_author.sql
+    0004_plan_recherche.sql  # plan_etapes_template (seed 6), etudiant_progression,
+                              # soumissions, conseils_ia + RLS + grants
 scripts/
   migrate.mjs            # applique les migrations via pg pooler
   smoke-openalex.mjs     # test query OpenAlex
@@ -144,6 +161,36 @@ System prompt Claude (dans `src/lib/anthropic.ts`) :
 6. Watermark final : "— Suggestion Mythese à reformuler dans ton style"
 
 Watermark visible UI sur chaque card de résultat (Module 1) et chaque proposition (Module 2) via `<Watermark />`.
+
+## Plan de recherche
+
+Espace `/app/plan`, scopé par compte (`user_id`), 6 étapes fixes (`plan_etapes_template`) :
+
+1. Sujet & problématique
+2. Revue de littérature
+3. Méthodologie
+4. Collecte de données / terrain
+5. Analyse & résultats
+6. Rédaction finale & soutenance
+
+- **Soumission** (texte collé ou fichier) → `/api/plan/classifier` → extraction texte brut
+  → Claude Haiku classe par étape(s) + statut + justification → upsert `etudiant_progression`
+  + insert `soumissions`.
+- **Conseil IA croisé** (par étape) → `/api/plan/conseil-ia` → Claude (méthodologie) + GPT
+  (sources/lacunes) en parallèle, puis synthèse Claude. Si une IA échoue, l'avis disponible
+  est retourné avec un message explicite à la place de l'avis manquant.
+
+### Extracteurs de contenu (`src/lib/extractors/`)
+
+Interface commune `{ buffer, mimeType } -> { text, type }` :
+
+| Type | Statut | Lib |
+|---|---|---|
+| Texte collé | ✅ V1 | direct |
+| PDF | ✅ V1 | `pdf-parse` |
+| Word (.docx) | ✅ V1 | `mammoth` |
+| Image / scan (OCR) | 🔜 V2 | à brancher dans `src/lib/extractors/index.ts` |
+| Audio (notes vocales) | 🔜 V2 | Whisper, idem |
 
 ## Roadmap nuits suivantes
 
