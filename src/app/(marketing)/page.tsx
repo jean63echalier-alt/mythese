@@ -1,64 +1,76 @@
 import { WaitlistForm } from "./_components/waitlist-form";
 import { PlanPreview } from "./_components/plan-preview";
+import { ExperienceHero } from "./_components/experience-hero";
 
 export default function HomePage() {
   return (
     <>
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="max-w-5xl mx-auto px-5 pt-20 pb-16 text-center">
-          <p className="text-xs uppercase tracking-[0.2em] text-[var(--color-burgundy)] mb-4">
-            Coach méthodologique IA · Pas un rédacteur fantôme
-          </p>
-          <h1 className="font-serif text-5xl md:text-6xl leading-[1.05] font-semibold text-[var(--color-ink)]">
-            Le coach IA qui structure ton<br />
-            <span className="text-[var(--color-burgundy)]">mémoire de recherche</span>.
-          </h1>
-          <p className="mt-6 text-lg text-[var(--color-ink-soft)] max-w-2xl mx-auto">
-            Sources peer-reviewed via OpenAlex (250M papers). Méthodologie française stricte.
-            <strong className="text-[var(--color-ink)]"> Jamais à ta place.</strong>
-          </p>
+      {/* HERO IMMERSIF — entrée dans l'expérience (clic ou scroll) */}
+      <ExperienceHero />
 
-          <div id="waitlist" className="mt-10 max-w-xl mx-auto">
-            <WaitlistForm />
+      {/* PORTAIL DE L'EXPÉRIENCE — découvert au scroll */}
+      <section id="decouvrir" className="relative border-y border-[#241f14] py-24">
+        <div className="mx-auto max-w-5xl px-5 text-center">
+          <p className="mb-4 text-xs uppercase tracking-[0.35em] text-[#C89B5A]">
+            L&apos;expérience
+          </p>
+          <h2 className="mb-5 font-serif text-3xl text-[#E1D9D1] md:text-5xl">
+            Quatre chapitres pour comprendre
+          </h2>
+          <p className="mx-auto mb-12 max-w-2xl text-[#a89f90]">
+            De la page blanche à l&apos;œuvre intègre — une traversée immersive de
+            la méthode MyThèse, où la transparence du dialogue IA devient une
+            preuve d&apos;intégrité.
+          </p>
+          <div className="mb-12 grid grid-cols-2 gap-4 md:grid-cols-4">
+            {[
+              { n: "01", t: "La Page Blanche" },
+              { n: "02", t: "Le Dialogue des Esprits" },
+              { n: "03", t: "La Validation" },
+              { n: "04", t: "L'Œuvre Intègre" },
+            ].map((c) => (
+              <div
+                key={c.n}
+                className="rounded-lg border border-[#241f14] bg-[#100E07] p-6 text-left"
+              >
+                <div className="mb-2 font-serif text-2xl text-[#C89B5A]">
+                  {c.n}
+                </div>
+                <div className="text-sm leading-snug text-[#cfc7ba]">{c.t}</div>
+              </div>
+            ))}
           </div>
-
-          <div className="mt-8 flex flex-col items-center gap-4">
-            <a
-              href="/experience.html"
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-burgundy)] px-8 py-3.5 text-sm font-medium uppercase tracking-[0.18em] text-[var(--color-burgundy)] transition-colors duration-300 hover:bg-[var(--color-burgundy)] hover:text-white"
-            >
-              ✦ Découvrir MyThèse
-            </a>
-            <p className="text-xs text-[var(--color-ink-muted)]">
-              <a href="#comment" className="underline hover:text-[var(--color-ink)]">Voir comment ça marche →</a>
-            </p>
-          </div>
+          <a
+            href="/experience.html"
+            className="inline-flex items-center gap-2 rounded-full bg-[#C89B5A] px-9 py-4 text-sm uppercase tracking-[0.2em] text-[#0A0901] transition-colors hover:bg-[#E1D9D1]"
+          >
+            Entrer dans l&apos;expérience →
+          </a>
         </div>
       </section>
 
       {/* BANDEAU CONFIANCE */}
-      <section className="border-y border-[var(--color-line)] bg-[var(--color-cream)] py-8">
-        <div className="max-w-5xl mx-auto px-5 grid md:grid-cols-3 gap-6 text-sm">
+      <section className="border-b border-[#241f14] bg-[#0d0b05] py-8">
+        <div className="mx-auto grid max-w-5xl gap-6 px-5 text-sm md:grid-cols-3">
           <div className="flex items-start gap-3">
             <span className="text-2xl">📚</span>
             <div>
-              <div className="font-medium text-[var(--color-ink)]">Sources peer-reviewed</div>
-              <div className="text-xs text-[var(--color-ink-muted)]">via OpenAlex (250M papers)</div>
+              <div className="font-medium text-[#E1D9D1]">Sources peer-reviewed</div>
+              <div className="text-xs text-[#8f877a]">via OpenAlex (250M papers)</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-2xl">🇫🇷</span>
             <div>
-              <div className="font-medium text-[var(--color-ink)]">Méthodologie française</div>
-              <div className="text-xs text-[var(--color-ink-muted)]">problématique, plan binaire/ternaire</div>
+              <div className="font-medium text-[#E1D9D1]">Méthodologie française</div>
+              <div className="text-xs text-[#8f877a]">problématique, plan binaire/ternaire</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-2xl">🔒</span>
             <div>
-              <div className="font-medium text-[var(--color-ink)]">Jamais à ta place</div>
-              <div className="text-xs text-[var(--color-ink-muted)]">watermark anti-fraude sur chaque output</div>
+              <div className="font-medium text-[#E1D9D1]">Jamais à ta place</div>
+              <div className="text-xs text-[#8f877a]">watermark anti-fraude sur chaque output</div>
             </div>
           </div>
         </div>
@@ -66,14 +78,15 @@ export default function HomePage() {
 
       {/* PROBLÈME */}
       <section className="py-20">
-        <div className="max-w-5xl mx-auto px-5">
-          <h2 className="font-serif text-3xl md:text-4xl font-semibold text-center mb-3">
+        <div className="mx-auto max-w-5xl px-5">
+          <h2 className="mb-3 text-center font-serif text-3xl font-medium text-[#E1D9D1] md:text-4xl">
             Trois douleurs que tout étudiant connaît
           </h2>
-          <p className="text-center text-[var(--color-ink-soft)] mb-12 max-w-2xl mx-auto">
-            Mythese ne les supprime pas. Mythese te donne les outils pour les surmonter — sans tricher.
+          <p className="mx-auto mb-12 max-w-2xl text-center text-[#a89f90]">
+            Mythese ne les supprime pas. Mythese te donne les outils pour les
+            surmonter — sans tricher.
           </p>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid gap-6 md:grid-cols-3">
             {[
               {
                 icon: "🔎",
@@ -93,11 +106,13 @@ export default function HomePage() {
             ].map((p) => (
               <div
                 key={p.title}
-                className="rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-6"
+                className="rounded-lg border border-[#241f14] bg-[#100E07] p-6"
               >
-                <div className="text-3xl mb-3">{p.icon}</div>
-                <div className="font-serif text-xl font-semibold mb-2">{p.title}</div>
-                <p className="text-sm text-[var(--color-ink-soft)] leading-relaxed">{p.desc}</p>
+                <div className="mb-3 text-3xl">{p.icon}</div>
+                <div className="mb-2 font-serif text-xl font-medium text-[#E1D9D1]">
+                  {p.title}
+                </div>
+                <p className="text-sm leading-relaxed text-[#a89f90]">{p.desc}</p>
               </div>
             ))}
           </div>
@@ -105,15 +120,21 @@ export default function HomePage() {
       </section>
 
       {/* SOLUTION */}
-      <section id="solution" className="py-20 bg-[var(--color-cream)] border-y border-[var(--color-line)]">
-        <div className="max-w-5xl mx-auto px-5">
-          <h2 className="font-serif text-3xl md:text-4xl font-semibold text-center mb-3">
-            La méthode et les sources.<br />Le raisonnement, c'est toi.
+      <section
+        id="solution"
+        className="border-y border-[#241f14] bg-[#0d0b05] py-20"
+      >
+        <div className="mx-auto max-w-5xl px-5">
+          <h2 className="mb-3 text-center font-serif text-3xl font-medium text-[#E1D9D1] md:text-4xl">
+            La méthode et les sources.
+            <br />
+            Le raisonnement, c&apos;est toi.
           </h2>
-          <p className="text-center text-[var(--color-ink-soft)] mb-12 max-w-2xl mx-auto">
-            Mythese fonctionne en modules. Chaque module produit des suggestions courtes, jamais de prose à coller.
+          <p className="mx-auto mb-12 max-w-2xl text-center text-[#a89f90]">
+            Mythese fonctionne en modules. Chaque module produit des suggestions
+            courtes, jamais de prose à coller.
           </p>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid gap-6 md:grid-cols-3">
             {[
               {
                 num: "1",
@@ -136,14 +157,18 @@ export default function HomePage() {
             ].map((s) => (
               <div
                 key={s.num}
-                className="rounded-lg bg-[var(--color-paper)] border border-[var(--color-line)] p-6 relative"
+                className="relative rounded-lg border border-[#241f14] bg-[#0A0901] p-6"
               >
-                <div className="absolute -top-3 -left-3 w-9 h-9 rounded-full bg-[var(--color-burgundy)] text-white font-serif font-semibold flex items-center justify-center shadow-md">
+                <div className="absolute -left-3 -top-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#C89B5A] font-serif font-semibold text-[#0A0901] shadow-md">
                   {s.num}
                 </div>
-                <div className="font-serif text-xl font-semibold mb-2 mt-1">{s.title}</div>
-                <p className="text-sm text-[var(--color-ink-soft)] leading-relaxed mb-3">{s.desc}</p>
-                <span className="text-xs px-2 py-1 rounded bg-[var(--color-cream)] border border-[var(--color-line)] text-[var(--color-ink-muted)]">
+                <div className="mb-2 mt-1 font-serif text-xl font-medium text-[#E1D9D1]">
+                  {s.title}
+                </div>
+                <p className="mb-3 text-sm leading-relaxed text-[#a89f90]">
+                  {s.desc}
+                </p>
+                <span className="rounded border border-[#241f14] bg-[#100E07] px-2 py-1 text-xs text-[#8f877a]">
                   {s.badge}
                 </span>
               </div>
@@ -153,26 +178,29 @@ export default function HomePage() {
       </section>
 
       {/* PLAN DE RECHERCHE PREVIEW */}
-      <section className="py-20 bg-[var(--color-cream)] border-y border-[var(--color-line)]">
-        <div className="max-w-5xl mx-auto px-5">
-          <h2 className="font-serif text-3xl md:text-4xl font-semibold text-center mb-3">
+      <section className="py-20">
+        <div className="mx-auto max-w-5xl px-5">
+          <h2 className="mb-3 text-center font-serif text-3xl font-medium text-[#E1D9D1] md:text-4xl">
             Ton mémoire, en 6 étapes claires
           </h2>
-          <p className="text-center text-[var(--color-ink-soft)] mb-12 max-w-2xl mx-auto">
-            Chaque soumission met à jour ton plan de recherche. Tu sais toujours où tu en es —
-            et où l'IA pense qu'il faut creuser.
+          <p className="mx-auto mb-12 max-w-2xl text-center text-[#a89f90]">
+            Chaque soumission met à jour ton plan de recherche. Tu sais toujours
+            où tu en es — et où l&apos;IA pense qu&apos;il faut creuser.
           </p>
           <PlanPreview />
         </div>
       </section>
 
       {/* COMMENT ÇA MARCHE */}
-      <section id="comment" className="py-20">
-        <div className="max-w-5xl mx-auto px-5">
-          <h2 className="font-serif text-3xl md:text-4xl font-semibold text-center mb-12">
+      <section
+        id="comment"
+        className="border-y border-[#241f14] bg-[#0d0b05] py-20"
+      >
+        <div className="mx-auto max-w-5xl px-5">
+          <h2 className="mb-12 text-center font-serif text-3xl font-medium text-[#E1D9D1] md:text-4xl">
             Comment ça marche
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid gap-8 md:grid-cols-3">
             {[
               {
                 num: "01",
@@ -191,11 +219,13 @@ export default function HomePage() {
               },
             ].map((step) => (
               <div key={step.num} className="text-center">
-                <div className="font-serif text-5xl text-[var(--color-burgundy)] mb-3 opacity-30">
+                <div className="mb-3 font-serif text-5xl text-[#C89B5A] opacity-40">
                   {step.num}
                 </div>
-                <div className="font-serif text-xl font-semibold mb-2">{step.title}</div>
-                <p className="text-sm text-[var(--color-ink-soft)] max-w-xs mx-auto">
+                <div className="mb-2 font-serif text-xl font-medium text-[#E1D9D1]">
+                  {step.title}
+                </div>
+                <p className="mx-auto max-w-xs text-sm text-[#a89f90]">
                   {step.desc}
                 </p>
               </div>
@@ -205,25 +235,30 @@ export default function HomePage() {
       </section>
 
       {/* WATERMARK PROMISE */}
-      <section className="py-16 bg-[var(--color-burgundy)] text-white">
-        <div className="max-w-3xl mx-auto px-5 text-center">
-          <p className="font-serif text-2xl md:text-3xl leading-snug">
-            "Mythèse, c'est ta thèse, ton mémoire,<br />
-            le couronnement de tes études.<br />
-            On te donne la méthode et les sources.<br />
-            <span className="italic">Le raisonnement, c'est toi.</span>"
+      <section className="bg-[#1a0d0d] py-16 text-[#E1D9D1]">
+        <div className="mx-auto max-w-3xl px-5 text-center">
+          <p className="font-serif text-2xl leading-snug md:text-3xl">
+            &laquo;&nbsp;Mythèse, c&apos;est ta thèse, ton mémoire,
+            <br />
+            le couronnement de tes études.
+            <br />
+            On te donne la méthode et les sources.
+            <br />
+            <span className="italic text-[#C89B5A]">Le raisonnement, c&apos;est toi.</span>
+            &nbsp;&raquo;
           </p>
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section className="py-20">
-        <div className="max-w-2xl mx-auto px-5 text-center">
-          <h2 className="font-serif text-3xl font-semibold mb-3">
+      {/* FINAL CTA + WAITLIST */}
+      <section id="waitlist" className="py-20">
+        <div className="mx-auto max-w-2xl px-5 text-center">
+          <h2 className="mb-3 font-serif text-3xl font-medium text-[#E1D9D1]">
             Rejoins la première promo
           </h2>
-          <p className="text-[var(--color-ink-soft)] mb-8">
-            On lance le MVP cette semaine. Place limitée pour avoir Jean au bout du fil.
+          <p className="mb-8 text-[#a89f90]">
+            On lance le MVP cette semaine. Place limitée pour avoir Jean au bout
+            du fil.
           </p>
           <WaitlistForm />
         </div>
