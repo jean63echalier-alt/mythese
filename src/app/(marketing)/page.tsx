@@ -23,9 +23,17 @@ export default function HomePage() {
             <WaitlistForm />
           </div>
 
-          <p className="mt-5 text-xs text-[var(--color-ink-muted)]">
-            <a href="#comment" className="underline hover:text-[var(--color-ink)]">Voir comment ça marche →</a>
-          </p>
+          <div className="mt-8 flex flex-col items-center gap-4">
+            <a
+              href="/experience.html"
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-burgundy)] px-8 py-3.5 text-sm font-medium uppercase tracking-[0.18em] text-[var(--color-burgundy)] transition-colors duration-300 hover:bg-[var(--color-burgundy)] hover:text-white"
+            >
+              ✦ Découvrir MyThèse
+            </a>
+            <p className="text-xs text-[var(--color-ink-muted)]">
+              <a href="#comment" className="underline hover:text-[var(--color-ink)]">Voir comment ça marche →</a>
+            </p>
+          </div>
         </div>
       </section>
 
