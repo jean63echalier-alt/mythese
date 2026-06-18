@@ -181,6 +181,12 @@
   .loader .l-bar i{display:block;height:100%;width:0;background:var(--gold);animation:load 1.6s var(--ease) forwards;}
   @keyframes load{to{width:100%;}}
 
+  .return-hint{margin-top:30px;font-family:var(--ui);font-size:11px;letter-spacing:.3em;
+    text-transform:uppercase;color:var(--gold);opacity:0;transition:opacity .7s var(--ease);
+    display:inline-flex;align-items:center;gap:10px;}
+  .return-hint.show{opacity:.85;animation:pulseHint 2.4s ease-in-out infinite;}
+  @keyframes pulseHint{0%,100%{opacity:.45;}50%{opacity:.95;}}
+  .outro.clickable{cursor:pointer;}
   footer{position:fixed;bottom:18px;right:24px;z-index:20;font-family:var(--ui);font-size:10px;
     letter-spacing:.16em;text-transform:uppercase;color:var(--off-white);opacity:.4;}
 
@@ -303,6 +309,7 @@
     <button class="pill ghost" id="ctaInfo">En savoir plus</button>
   </div>
   <div class="restart" id="restartBtn">↻ Revivre l'expérience</div>
+  <div class="return-hint" id="returnHint">Cliquez n'importe où pour revenir au site →</div>
 </section>
 
 <footer>Conçu pour les chercheurs de demain</footer>
@@ -583,6 +590,9 @@
   // Active chapter detection → morph canvas + header theme + nav
   const header = document.getElementById('header');
   const chapterNav = document.getElementById('chapterNav');
+  const outroEl = document.getElementById('outro');
+  const returnHint = document.getElementById('returnHint');
+  let atEnd = false;
   const navBtns = chapterNav.querySelectorAll('button');
   const skipBtn = document.getElementById('skipBtn');
   const sections = [document.getElementById('hero'), ...chapters, document.getElementById('outro')];
@@ -598,12 +608,15 @@
           chapterNav.classList.add('show');
           skipBtn.classList.add('show');
           navBtns.forEach(b=>b.classList.toggle('active', b.dataset.go==String(n)));
+          atEnd=false; returnHint.classList.remove('show'); outroEl.classList.remove('clickable');
         } else if(el.id==='hero'){
           morphTo('cloud'); setTheme('dark');
           chapterNav.classList.remove('show'); skipBtn.classList.remove('show');
+          atEnd=false; returnHint.classList.remove('show'); outroEl.classList.remove('clickable');
         } else if(el.id==='outro'){
           morphTo('radiant'); setTheme('dark');
           chapterNav.classList.remove('show'); skipBtn.classList.remove('show');
+          atEnd=true; returnHint.classList.add('show'); outroEl.classList.add('clickable');
         }
       }
     });
@@ -651,6 +664,13 @@
   });
   document.getElementById('restartBtn').addEventListener('click',()=>{
     window.scrollTo({top:0,behavior:'smooth'});
+  });
+
+  // Click anywhere at the end -> return to main site (index)
+  document.addEventListener('click',(e)=>{
+    if(!atEnd) return;
+    if(e.target.closest('#ctaBeta,#ctaInfo,#restartBtn,#infoBtn,#audioBtn,#infoPanel,.info-panel,a,button')) return;
+    window.location.href='/';
   });
 
   /* ===== Audio: ambient drone via WebAudio (off by default) ===== */
