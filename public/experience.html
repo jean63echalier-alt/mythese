@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0A0901" />
+<title>MyThèse — L'Auteur reste l'Auteur</title>
+<meta name="description" content="Une expérience immersive sur la co-construction de mémoires de recherche assistée par double IA, entièrement transparente." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Bellefair&family=Figtree:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --main-bg:#0A0901;
+    --site-background:#f4f0ec;
+    --off-white:#E1D9D1;
+    --text:#332F22;
+    --gold:#C89B5A;
+    --gold-deep:#9C6E49;
+    --story-intro:#E1D9D1;
+    --menu-bg:#090A02;
+    --reveal:.8s;
+    --ease:cubic-bezier(.16,1,.3,1);
+    --serif:'Cormorant Garamond',serif;
+    --body:'Bellefair',serif;
+    --ui:'Figtree',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:var(--main-bg);color:var(--off-white);overflow-x:hidden;}
+  body{font-family:var(--body);-webkit-font-smoothing:antialiased;cursor:default;}
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--gold);color:var(--main-bg);}
+
+  /* ---------- Canvas ---------- */
+  #webgl{position:fixed;inset:0;width:100vw;height:100dvh;z-index:-1;display:block;}
+  #grain{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .vignette{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(ellipse at center,transparent 45%,rgba(5,5,2,.55) 100%);}
+
+  /* ---------- Header ---------- */
+  header{position:fixed;top:0;left:0;width:100%;z-index:30;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:26px 34px;pointer-events:none;transition:color .9s var(--ease);}
+  header .round{pointer-events:auto;width:42px;height:42px;border-radius:50%;
+    border:1px solid currentColor;display:grid;place-items:center;cursor:pointer;
+    background:transparent;color:inherit;transition:background .4s,color .4s,transform .4s;}
+  header .round:hover{background:currentColor;}
+  header .round:hover svg{stroke:var(--main-bg);}
+  header .round svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.4;transition:stroke .4s;}
+  .brand{position:absolute;left:50%;top:26px;transform:translateX(-50%);
+    font-family:var(--ui);font-weight:400;letter-spacing:.42em;font-size:13px;
+    text-transform:uppercase;text-indent:.42em;color:inherit;white-space:nowrap;}
+  header.light{color:var(--text);}
+  header.dark{color:var(--off-white);}
+
+  /* audio waves */
+  .wave{display:flex;align-items:center;gap:2px;height:14px;}
+  .wave span{width:2px;background:currentColor;height:4px;border-radius:2px;}
+  .audio-btn.playing .wave span{animation:eq .9s ease-in-out infinite;}
+  .audio-btn.playing .wave span:nth-child(2){animation-delay:.15s;}
+  .audio-btn.playing .wave span:nth-child(3){animation-delay:.3s;}
+  .audio-btn.playing .wave span:nth-child(4){animation-delay:.45s;}
+  @keyframes eq{0%,100%{height:4px;}50%{height:14px;}}
+
+  /* ---------- Intro / Hero ---------- */
+  .hero{position:relative;z-index:10;height:100dvh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:0 24px;}
+  .hero .kicker{font-family:var(--ui);font-size:12px;letter-spacing:.4em;text-transform:uppercase;
+    color:var(--gold);opacity:0;margin-bottom:30px;}
+  .hero h1{font-family:var(--serif);line-height:.92;font-weight:400;letter-spacing:.01em;}
+  .hero h1 .the{display:block;font-style:italic;font-weight:500;
+    font-size:clamp(30px,5vw,62px);color:var(--off-white);opacity:0;}
+  .hero h1 .main{display:block;font-size:clamp(54px,13vw,168px);text-transform:uppercase;
+    letter-spacing:.02em;color:var(--off-white);opacity:0;}
+  .hero .tagline{font-family:var(--body);font-size:clamp(15px,1.6vw,20px);
+    max-width:560px;margin:34px auto 46px;color:var(--off-white);opacity:0;line-height:1.5;}
+  .enter-btn{font-family:var(--ui);font-size:12px;letter-spacing:.28em;text-transform:uppercase;
+    padding:16px 40px;border:1px solid var(--off-white);border-radius:40px;background:transparent;
+    color:var(--off-white);cursor:pointer;opacity:0;transition:background .5s var(--ease),color .5s var(--ease),letter-spacing .5s;}
+  .enter-btn:hover{background:var(--off-white);color:var(--main-bg);letter-spacing:.34em;}
+  .scroll-hint{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
+    font-family:var(--ui);font-size:10px;letter-spacing:.3em;text-transform:uppercase;
+    color:var(--off-white);opacity:0;display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .scroll-hint .line{width:1px;height:40px;background:linear-gradient(var(--gold),transparent);
+    animation:drop 2s ease-in-out infinite;}
+  @keyframes drop{0%{transform:scaleY(0);transform-origin:top;}45%{transform:scaleY(1);transform-origin:top;}
+    55%{transform:scaleY(1);transform-origin:bottom;}100%{transform:scaleY(0);transform-origin:bottom;}}
+
+  /* ---------- Chapters ---------- */
+  .chapter{position:relative;z-index:10;min-height:100dvh;display:flex;flex-direction:column;
+    justify-content:center;padding:14vh 8vw;}
+  .chapter .num{font-family:var(--ui);font-size:12px;letter-spacing:.4em;color:var(--gold);
+    text-transform:uppercase;margin-bottom:22px;opacity:0;transform:translateY(20px);}
+  .chapter h2{font-family:var(--serif);font-weight:400;line-height:.95;max-width:14ch;}
+  .chapter h2 .the{display:block;font-style:italic;font-weight:500;font-size:clamp(24px,3.4vw,46px);
+    color:var(--gold);opacity:0;transform:translateY(28px);}
+  .chapter h2 .main{display:block;font-size:clamp(40px,7vw,104px);text-transform:uppercase;
+    letter-spacing:.01em;opacity:0;transform:translateY(34px);}
+  .subs{margin-top:48px;max-width:520px;display:flex;flex-direction:column;gap:30px;}
+  .sub{font-family:var(--body);font-size:clamp(16px,1.7vw,22px);line-height:1.5;
+    color:var(--off-white);opacity:0;transform:translateY(24px);}
+  .sub.right{align-self:flex-end;text-align:right;}
+  .sub.center{align-self:center;text-align:center;}
+  .instr{margin-top:54px;font-family:var(--ui);font-style:italic;font-size:12px;letter-spacing:.12em;
+    color:var(--gold);opacity:0;transform:translateY(16px);display:flex;align-items:center;gap:10px;}
+  .instr::before{content:"";width:26px;height:1px;background:var(--gold);display:inline-block;}
+  .chapter.light h2 .main,.chapter.light .sub{color:var(--text);}
+  .chapter.light .num,.chapter.light h2 .the,.chapter.light .instr{color:var(--gold-deep);}
+  .chapter.light .instr::before{background:var(--gold-deep);}
+
+  /* ---------- Outro ---------- */
+  .outro{position:relative;z-index:10;min-height:100dvh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:14vh 24px;}
+  .outro h2{font-family:var(--serif);font-weight:400;line-height:.95;}
+  .outro h2 .the{display:block;font-style:italic;font-size:clamp(26px,4vw,52px);color:var(--gold);}
+  .outro h2 .main{display:block;font-size:clamp(46px,10vw,128px);text-transform:uppercase;}
+  .outro p{font-family:var(--body);font-size:clamp(16px,1.7vw,21px);max-width:540px;
+    margin:30px auto 42px;line-height:1.55;color:var(--off-white);}
+  .outro .cta-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+  .pill{font-family:var(--ui);font-size:12px;letter-spacing:.26em;text-transform:uppercase;
+    padding:16px 38px;border-radius:40px;cursor:pointer;transition:all .5s var(--ease);}
+  .pill.solid{background:var(--gold);color:var(--main-bg);border:1px solid var(--gold);}
+  .pill.solid:hover{background:transparent;color:var(--gold);}
+  .pill.ghost{background:transparent;color:var(--off-white);border:1px solid var(--off-white);}
+  .pill.ghost:hover{background:var(--off-white);color:var(--main-bg);}
+  .restart{margin-top:50px;font-family:var(--ui);font-size:11px;letter-spacing:.3em;
+    text-transform:uppercase;color:var(--gold);cursor:pointer;opacity:.8;
+    display:inline-flex;align-items:center;gap:10px;transition:opacity .4s;}
+  .restart:hover{opacity:1;}
+
+  /* ---------- Chapter selector ---------- */
+  .chapter-nav{position:fixed;right:34px;top:50%;transform:translateY(-50%);z-index:30;
+    display:flex;flex-direction:column;gap:18px;opacity:0;transition:opacity .6s,color .9s var(--ease);}
+  .chapter-nav.show{opacity:1;}
+  .chapter-nav button{background:none;border:none;cursor:pointer;font-family:var(--ui);
+    font-size:11px;letter-spacing:.1em;color:currentColor;opacity:.4;
+    display:flex;align-items:center;gap:10px;transition:opacity .4s;}
+  .chapter-nav button .dot{width:6px;height:6px;border-radius:50%;border:1px solid currentColor;transition:all .4s;}
+  .chapter-nav button.active{opacity:1;}
+  .chapter-nav button.active .dot{background:var(--gold);border-color:var(--gold);transform:scale(1.4);}
+  .chapter-nav button:hover{opacity:.85;}
+  .nav-light{color:var(--text);}
+  .nav-dark{color:var(--off-white);}
+
+  /* ---------- Progress ---------- */
+  .progress{position:fixed;left:0;top:0;height:2px;width:0;background:var(--gold);z-index:40;transition:width .1s linear;}
+
+  /* ---------- Info panel ---------- */
+  .info-panel{position:fixed;inset:0;z-index:50;background:rgba(9,10,2,.55);backdrop-filter:blur(6px);
+    opacity:0;pointer-events:none;transition:opacity .5s var(--ease);}
+  .info-panel.open{opacity:1;pointer-events:auto;}
+  .info-inner{position:absolute;top:0;left:0;height:100%;width:min(480px,92vw);background:var(--menu-bg);
+    padding:80px 50px;overflow-y:auto;transform:translateX(-100%);transition:transform .6s var(--ease);
+    border-right:1px solid rgba(200,155,90,.2);}
+  .info-panel.open .info-inner{transform:translateX(0);}
+  .info-inner h3{font-family:var(--serif);font-style:italic;font-size:34px;color:var(--gold);margin-bottom:24px;font-weight:500;}
+  .info-inner p{font-family:var(--body);font-size:17px;line-height:1.6;color:var(--off-white);margin-bottom:18px;opacity:.9;}
+  .info-inner .lbl{font-family:var(--ui);font-size:11px;letter-spacing:.3em;text-transform:uppercase;
+    color:var(--gold);margin:38px 0 16px;}
+  .info-inner a.link{display:block;font-family:var(--body);font-size:18px;margin-bottom:10px;
+    color:var(--off-white);transition:color .3s;}
+  .info-inner a.link:hover{color:var(--gold);}
+  .socials{display:flex;gap:14px;margin-top:20px;}
+  .socials a{width:40px;height:40px;border:1px solid rgba(225,217,209,.3);border-radius:50%;
+    display:grid;place-items:center;transition:all .4s;}
+  .socials a:hover{background:var(--gold);border-color:var(--gold);color:var(--main-bg);}
+  .socials svg{width:17px;height:17px;}
+  .close-info{position:absolute;top:28px;right:28px;width:40px;height:40px;border-radius:50%;
+    border:1px solid rgba(225,217,209,.3);background:none;color:var(--off-white);cursor:pointer;
+    display:grid;place-items:center;transition:all .4s;}
+  .close-info:hover{background:var(--off-white);color:var(--main-bg);}
+
+  /* ---------- Loader ---------- */
+  .loader{position:fixed;inset:0;z-index:80;background:var(--main-bg);display:grid;place-items:center;
+    transition:opacity .9s var(--ease),visibility .9s;}
+  .loader.hide{opacity:0;visibility:hidden;}
+  .loader .l-inner{text-align:center;}
+  .loader .l-mark{font-family:var(--serif);font-style:italic;font-size:40px;color:var(--gold);letter-spacing:.02em;}
+  .loader .l-bar{width:180px;height:1px;background:rgba(225,217,209,.2);margin:26px auto 0;overflow:hidden;}
+  .loader .l-bar i{display:block;height:100%;width:0;background:var(--gold);animation:load 1.6s var(--ease) forwards;}
+  @keyframes load{to{width:100%;}}
+
+  footer{position:fixed;bottom:18px;right:24px;z-index:20;font-family:var(--ui);font-size:10px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--off-white);opacity:.4;}
+
+  /* skip */
+  .skip{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:25;
+    font-family:var(--ui);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--off-white);
+    opacity:0;cursor:pointer;transition:opacity .5s,color .9s var(--ease);background:none;border:none;}
+  .skip.show{opacity:.55;}
+  .skip:hover{opacity:1;}
+
+  @media(max-width:768px){
+    header{padding:18px 18px;}
+    .brand{font-size:11px;letter-spacing:.32em;}
+    .chapter-nav{display:none;}
+    .chapter{padding:16vh 8vw;}
+    .info-inner{padding:70px 32px;}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+
+<!-- Loader -->
+<div class="loader" id="loader">
+  <div class="l-inner">
+    <div class="l-mark">MyThèse</div>
+    <div class="l-bar"><i></i></div>
+  </div>
+</div>
+
+<canvas id="webgl"></canvas>
+<div class="vignette"></div>
+<div id="grain"></div>
+<div class="progress" id="progress"></div>
+
+<!-- Header -->
+<header id="header" class="dark">
+  <button class="round info-btn" id="infoBtn" aria-label="À propos">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r=".6" fill="currentColor" stroke="none"/></svg>
+  </button>
+  <div class="brand">MyThèse</div>
+  <button class="round audio-btn" id="audioBtn" aria-label="Son">
+    <span class="wave"><span></span><span></span><span></span><span></span></span>
+  </button>
+</header>
+
+<!-- Chapter selector -->
+<nav class="chapter-nav nav-dark" id="chapterNav">
+  <button data-go="1" class="active"><span class="dot"></span>01</button>
+  <button data-go="2"><span class="dot"></span>02</button>
+  <button data-go="3"><span class="dot"></span>03</button>
+  <button data-go="4"><span class="dot"></span>04</button>
+</nav>
+
+<button class="skip" id="skipBtn">Chapitre suivant ↓</button>
+
+<!-- ===== HERO ===== -->
+<section class="hero" id="hero">
+  <div class="kicker" id="heroKicker">Une expérience immersive</div>
+  <h1>
+    <span class="the" id="heroThe">L'auteur reste</span>
+    <span class="main" id="heroMain">L'AUTEUR</span>
+  </h1>
+  <p class="tagline" id="heroTag">Co-construire un mémoire de recherche avec deux intelligences artificielles, en voyant tout. La transparence comme principe, pas comme promesse.</p>
+  <button class="enter-btn" id="enterBtn">Entrer dans l'expérience</button>
+  <div class="scroll-hint" id="scrollHint"><span>Défiler</span><span class="line"></span></div>
+</section>
+
+<!-- ===== CHAPTERS ===== -->
+<section class="chapter" data-chapter="1" data-theme="dark">
+  <div class="num">Chapitre 01</div>
+  <h2><span class="the">La</span><span class="main">Page Blanche</span></h2>
+  <div class="subs">
+    <p class="sub">Au commencement, le chaos : mille idées dispersées, aucune direction.</p>
+    <p class="sub right">La page blanche n'est pas vide — elle est saturée d'angoisse.</p>
+    <p class="sub">Rédiger un mémoire est long, exigeant, et solitaire.</p>
+  </div>
+  <div class="instr" data-instr>Déplacez le curseur pour rassembler les fragments</div>
+</section>
+
+<section class="chapter" data-chapter="2" data-theme="dark">
+  <div class="num">Chapitre 02</div>
+  <h2><span class="the">Le</span><span class="main">Dialogue des Esprits</span></h2>
+  <div class="subs">
+    <p class="sub">Deux intelligences entrent en conversation, sous vos yeux.</p>
+    <p class="sub right">L'une propose et rédige. L'autre challenge et vérifie la méthode.</p>
+    <p class="sub center">Vous voyez chaque échange. Rien n'est une boîte noire.</p>
+  </div>
+  <div class="instr" data-instr>Guidez les deux flux pour les faire converger</div>
+</section>
+
+<section class="chapter" data-chapter="3" data-theme="light">
+  <div class="num">Chapitre 03</div>
+  <h2><span class="the">La</span><span class="main">Validation</span></h2>
+  <div class="subs">
+    <p class="sub">Orientation, puis plan, puis chapitres : la structure se construit.</p>
+    <p class="sub right">À chaque jalon, vous arbitrez. Le directeur de recherche valide.</p>
+    <p class="sub">L'humain décide avant que la moindre ligne soit écrite.</p>
+  </div>
+  <div class="instr" data-instr>Survolez les nœuds pour révéler l'architecture</div>
+</section>
+
+<section class="chapter" data-chapter="4" data-theme="dark">
+  <div class="num">Chapitre 04</div>
+  <h2><span class="the">L'</span><span class="main">Œuvre Intègre</span></h2>
+  <div class="subs">
+    <p class="sub">De la lumière dispersée naît une œuvre cohérente.</p>
+    <p class="sub right">Un mémoire de qualité, rédigé sans tricher.</p>
+    <p class="sub center">La transparence devient une preuve d'intégrité.</p>
+  </div>
+  <div class="instr" data-instr>Faites jaillir la lumière du texte achevé</div>
+</section>
+
+<!-- ===== OUTRO ===== -->
+<section class="outro" id="outro">
+  <h2><span class="the">Votre mémoire</span><span class="main">commence ici</span></h2>
+  <p>MyThèse transforme l'IA en partenaire de réflexion transparent. Vous restez l'auteur, accompagné jusqu'à la soutenance.</p>
+  <div class="cta-row">
+    <button class="pill solid" id="ctaBeta">Rejoindre la bêta</button>
+    <button class="pill ghost" id="ctaInfo">En savoir plus</button>
+  </div>
+  <div class="restart" id="restartBtn">↻ Revivre l'expérience</div>
+</section>
+
+<footer>Conçu pour les chercheurs de demain</footer>
+
+<!-- Info panel -->
+<div class="info-panel" id="infoPanel">
+  <div class="info-inner">
+    <button class="close-info" id="closeInfo">✕</button>
+    <h3>À propos du projet</h3>
+    <p>MyThèse est une plateforme de co-construction de mémoires de recherche assistée par double IA. Une première intelligence rédige et structure ; une seconde critique, vérifie la méthode et signale les faiblesses.</p>
+    <p>L'étudiant observe l'intégralité du dialogue, valide chaque orientation, et reste l'unique auteur de son travail. Le directeur de recherche intervient aux moments-clés. La transparence n'est pas une fonctionnalité : c'est le cœur du produit.</p>
+    <div class="lbl">Nous contacter</div>
+    <a class="link" href="mailto:contact@mythese.fr">contact@mythese.fr</a>
+    <div class="lbl">Suivre le projet</div>
+    <div class="socials">
+      <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05C20.3 8.65 21 11 21 14.1V21h-4v-6.1c0-1.45-.03-3.3-2-3.3s-2.3 1.57-2.3 3.2V21H9z"/></svg></a>
+      <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 3H22l-7.3 8.3L23 21h-6.6l-5.2-6.5L5.3 21H2l7.8-8.9L1.5 3h6.8l4.7 6 5.9-6zm-2.3 16h1.8L7.5 4.8H5.6z"/></svg></a>
+      <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor"/></svg></a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+<script>
+/* =====================================================================
+   MyThèse — Expérience immersive
+   Canvas: système de particules unique qui morphe entre chapitres
+   ===================================================================== */
+(function(){
+  const COUNT = window.innerWidth < 768 ? 4200 : 8000;
+  const canvas = document.getElementById('webgl');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.z = 26;
+
+  // ---- buffers ----
+  const positions = new Float32Array(COUNT*3); // current
+  const targets   = new Float32Array(COUNT*3); // morph target
+  const colors    = new Float32Array(COUNT*3);
+  const seeds     = new Float32Array(COUNT);
+  for(let i=0;i<COUNT;i++){
+    positions[i*3]=(Math.random()-0.5)*60;
+    positions[i*3+1]=(Math.random()-0.5)*40;
+    positions[i*3+2]=(Math.random()-0.5)*30;
+    seeds[i]=Math.random();
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors,3));
+
+  // circular soft sprite
+  const sprite = (function(){
+    const c=document.createElement('canvas');c.width=c.height=64;
+    const x=c.getContext('2d');
+    const g=x.createRadialGradient(32,32,0,32,32,32);
+    g.addColorStop(0,'rgba(255,255,255,1)');
+    g.addColorStop(.35,'rgba(255,255,255,.6)');
+    g.addColorStop(1,'rgba(255,255,255,0)');
+    x.fillStyle=g;x.fillRect(0,0,64,64);
+    return new THREE.CanvasTexture(c);
+  })();
+
+  const mat = new THREE.PointsMaterial({
+    size: 0.42, map:sprite, vertexColors:true, transparent:true,
+    depthWrite:false, blending:THREE.AdditiveBlending, opacity:.95
+  });
+  const points = new THREE.Points(geo, mat);
+  scene.add(points);
+
+  // ---- palette helpers ----
+  const COL = {
+    gold:   new THREE.Color('#C89B5A'),
+    sand:   new THREE.Color('#9C6E49'),
+    cream:  new THREE.Color('#E1D9D1'),
+    claude: new THREE.Color('#C89B5A'),
+    gpt:    new THREE.Color('#6FA38C'),
+    deep:   new THREE.Color('#3a2c18'),
+    ink:    new THREE.Color('#332F22')
+  };
+
+  // ---- shape generators: fill targets[] + colors[] ----
+  function setColor(i,c,jit){
+    const j = jit?(0.82+Math.random()*0.25):1;
+    colors[i*3]=c.r*j; colors[i*3+1]=c.g*j; colors[i*3+2]=c.b*j;
+  }
+
+  const shapes = {
+    // Chapter 1 — scattered cloud / page blanche
+    cloud(){
+      for(let i=0;i<COUNT;i++){
+        const r=18*Math.cbrt(Math.random());
+        const t=Math.random()*Math.PI*2, p=Math.acos(2*Math.random()-1);
+        targets[i*3]=r*Math.sin(p)*Math.cos(t);
+        targets[i*3+1]=r*Math.sin(p)*Math.sin(t)*0.7;
+        targets[i*3+2]=r*Math.cos(p)*0.6;
+        const c = Math.random()<0.5?COL.cream:COL.sand;
+        setColor(i,c,true);
+      }
+    },
+    // Chapter 2 — double helix (two AIs)
+    helix(){
+      for(let i=0;i<COUNT;i++){
+        const strand = i%2;
+        const tt = (i/COUNT)*Math.PI*10;
+        const rad = 5.2;
+        const off = strand?Math.PI:0;
+        targets[i*3]   = Math.cos(tt+off)*rad;
+        targets[i*3+1] = (i/COUNT-0.5)*34;
+        targets[i*3+2] = Math.sin(tt+off)*rad;
+        // jitter
+        targets[i*3]   += (Math.random()-0.5)*1.2;
+        targets[i*3+2] += (Math.random()-0.5)*1.2;
+        setColor(i, strand?COL.claude:COL.gpt, true);
+      }
+    },
+    // Chapter 3 — structured grid / branching plan
+    grid(){
+      const cols=Math.ceil(Math.sqrt(COUNT*1.6)), rows=Math.ceil(COUNT/cols);
+      let i=0;
+      for(let y=0;y<rows;y++){
+        for(let x=0;x<cols && i<COUNT;x++){
+          targets[i*3]   = (x/(cols-1)-0.5)*34;
+          targets[i*3+1] = (y/(rows-1)-0.5)*22;
+          targets[i*3+2] = Math.sin(x*0.6)*Math.cos(y*0.6)*2.2;
+          setColor(i, COL.sand, true);
+          i++;
+        }
+      }
+      for(;i<COUNT;i++){ targets[i*3]=0;targets[i*3+1]=0;targets[i*3+2]=0; setColor(i,COL.sand,true); }
+    },
+    // Chapter 4 — radiant sphere / finished work
+    radiant(){
+      for(let i=0;i<COUNT;i++){
+        const r=12+Math.random()*0.6;
+        const t=Math.random()*Math.PI*2, p=Math.acos(2*Math.random()-1);
+        targets[i*3]=r*Math.sin(p)*Math.cos(t);
+        targets[i*3+1]=r*Math.sin(p)*Math.sin(t);
+        targets[i*3+2]=r*Math.cos(p);
+        const c=COL.gold.clone().lerp(COL.cream, Math.random()*0.5);
+        setColor(i,c,true);
+      }
+    }
+  };
+
+  // intro/hero shape = gentle wide cloud
+  shapes.cloud();
+  geo.attributes.color.needsUpdate=true;
+
+  const shapeOrder = ['cloud','helix','grid','radiant'];
+  let currentShape = 'cloud';
+  function morphTo(name){
+    if(name===currentShape) return;
+    currentShape=name;
+    shapes[name]();
+    geo.attributes.color.needsUpdate=true;
+  }
+
+  // ---- pointer ----
+  const pointer = {x:0,y:0,tx:0,ty:0, active:false};
+  function onMove(e){
+    const px = (e.touches?e.touches[0].clientX:e.clientX);
+    const py = (e.touches?e.touches[0].clientY:e.clientY);
+    pointer.tx = (px/window.innerWidth-0.5)*2;
+    pointer.ty = -(py/window.innerHeight-0.5)*2;
+    pointer.active=true;
+  }
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('touchmove', onMove, {passive:true});
+  window.addEventListener('touchstart', onMove, {passive:true});
+
+  // ---- animation loop ----
+  const clock = new THREE.Clock();
+  let scrollY = 0, scrollTarget = 0;
+  window.addEventListener('scroll', ()=>{ scrollTarget = window.scrollY; }, {passive:true});
+
+  function animate(){
+    requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+    pointer.x += (pointer.tx-pointer.x)*0.05;
+    pointer.y += (pointer.ty-pointer.y)*0.05;
+    scrollY += (scrollTarget-scrollY)*0.08;
+
+    const pos = geo.attributes.position.array;
+    const mx = pointer.x*22, my = pointer.y*15;
+
+    for(let i=0;i<COUNT;i++){
+      const ix=i*3, iy=i*3+1, iz=i*3+2;
+      // drift toward target
+      let txp=targets[ix], typ=targets[iy], tzp=targets[iz];
+      // organic breathing
+      const s=seeds[i];
+      txp += Math.sin(t*0.5+s*6.28)*0.5;
+      typ += Math.cos(t*0.4+s*6.28)*0.5;
+
+      pos[ix]+=(txp-pos[ix])*0.04;
+      pos[iy]+=(typ-pos[iy])*0.04;
+      pos[iz]+=(tzp-pos[iz])*0.04;
+
+      // pointer repulsion (screen-ish space using x/y)
+      const dx=pos[ix]-mx, dy=pos[iy]-my;
+      const d2=dx*dx+dy*dy;
+      if(d2<40){
+        const f=(40-d2)/40*0.6;
+        pos[ix]+=dx*f*0.12;
+        pos[iy]+=dy*f*0.12;
+      }
+    }
+    geo.attributes.position.needsUpdate=true;
+
+    // slow rotation, subtle scroll-driven tilt
+    points.rotation.y = t*0.04 + pointer.x*0.15;
+    points.rotation.x = pointer.y*0.1;
+    camera.position.z = 26 - Math.min(scrollY/600,4);
+
+    renderer.render(scene,camera);
+  }
+  animate();
+
+  window.addEventListener('resize', ()=>{
+    camera.aspect=window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  /* ================= UI / GSAP ================= */
+  // Loader out
+  window.addEventListener('load', ()=> setTimeout(hideLoader, 1700));
+  setTimeout(hideLoader, 2600); // fallback
+  let loaded=false;
+  function hideLoader(){
+    if(loaded) return; loaded=true;
+    document.getElementById('loader').classList.add('hide');
+    introTl();
+  }
+
+  function introTl(){
+    gsap.to('#heroKicker',{opacity:.9,duration:1,delay:.2});
+    gsap.to('#heroThe',{opacity:1,y:0,duration:1.1,delay:.4,ease:'power3.out'});
+    gsap.to('#heroMain',{opacity:1,y:0,duration:1.2,delay:.6,ease:'power3.out'});
+    gsap.to('#heroTag',{opacity:1,duration:1.1,delay:1});
+    gsap.to('#enterBtn',{opacity:1,duration:1,delay:1.3});
+    gsap.to('#scrollHint',{opacity:.7,duration:1,delay:1.7});
+  }
+  gsap.set('#heroThe',{y:30}); gsap.set('#heroMain',{y:40});
+
+  // Enter button → scroll to chapter 1
+  document.getElementById('enterBtn').addEventListener('click',()=>{
+    document.querySelector('[data-chapter="1"]').scrollIntoView({behavior:'smooth'});
+  });
+
+  // Reveal chapters on scroll
+  const chapters = document.querySelectorAll('.chapter');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{
+      if(en.isIntersecting && !en.target.dataset.revealed){
+        en.target.dataset.revealed='1';
+        revealChapter(en.target);
+      }
+    });
+  },{threshold:.35});
+  chapters.forEach(c=>io.observe(c));
+
+  function revealChapter(el){
+    const q = sel=>el.querySelectorAll(sel);
+    gsap.to(el.querySelector('.num'),{opacity:1,y:0,duration:.9,ease:'power3.out'});
+    gsap.to(el.querySelector('h2 .the'),{opacity:1,y:0,duration:1,delay:.15,ease:'power3.out'});
+    gsap.to(el.querySelector('h2 .main'),{opacity:1,y:0,duration:1.1,delay:.3,ease:'power3.out'});
+    q('.sub').forEach((s,i)=>gsap.to(s,{opacity:.95,y:0,duration:1,delay:.6+i*.25,ease:'power3.out'}));
+    gsap.to(el.querySelector('[data-instr]'),{opacity:1,y:0,duration:1,delay:1.4,ease:'power2.out'});
+  }
+
+  // Active chapter detection → morph canvas + header theme + nav
+  const header = document.getElementById('header');
+  const chapterNav = document.getElementById('chapterNav');
+  const navBtns = chapterNav.querySelectorAll('button');
+  const skipBtn = document.getElementById('skipBtn');
+  const sections = [document.getElementById('hero'), ...chapters, document.getElementById('outro')];
+
+  const trackIo = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{
+      if(en.isIntersecting && en.intersectionRatio>0.5){
+        const el=en.target;
+        if(el.classList.contains('chapter')){
+          const n=parseInt(el.dataset.chapter,10);
+          morphTo(shapeOrder[n-1]);
+          setTheme(el.dataset.theme);
+          chapterNav.classList.add('show');
+          skipBtn.classList.add('show');
+          navBtns.forEach(b=>b.classList.toggle('active', b.dataset.go==String(n)));
+        } else if(el.id==='hero'){
+          morphTo('cloud'); setTheme('dark');
+          chapterNav.classList.remove('show'); skipBtn.classList.remove('show');
+        } else if(el.id==='outro'){
+          morphTo('radiant'); setTheme('dark');
+          chapterNav.classList.remove('show'); skipBtn.classList.remove('show');
+        }
+      }
+    });
+  },{threshold:[0.5]});
+  sections.forEach(s=>trackIo.observe(s));
+
+  function setTheme(theme){
+    header.classList.toggle('light', theme==='light');
+    header.classList.toggle('dark', theme!=='light');
+    chapterNav.classList.toggle('nav-light', theme==='light');
+    chapterNav.classList.toggle('nav-dark', theme!=='light');
+    document.body.style.background = theme==='light' ? '#B7B09C' : '#0A0901';
+    gsap.to('body',{backgroundColor: theme==='light'?'#B7B09C':'#0A0901',duration:1});
+  }
+
+  // nav click
+  navBtns.forEach(b=>b.addEventListener('click',()=>{
+    document.querySelector(`[data-chapter="${b.dataset.go}"]`).scrollIntoView({behavior:'smooth'});
+  }));
+  skipBtn.addEventListener('click',()=>{
+    const cur=[...chapters].find(c=>c.dataset.revealed && isInView(c));
+    let next;
+    for(const c of chapters){ if(c.getBoundingClientRect().top>50){next=c;break;} }
+    (next||document.getElementById('outro')).scrollIntoView({behavior:'smooth'});
+  });
+  function isInView(el){const r=el.getBoundingClientRect();return r.top<window.innerHeight*0.6&&r.bottom>0;}
+
+  // progress bar
+  const progress=document.getElementById('progress');
+  window.addEventListener('scroll',()=>{
+    const h=document.documentElement.scrollHeight-window.innerHeight;
+    progress.style.width=(window.scrollY/h*100)+'%';
+  },{passive:true});
+
+  // info panel
+  const infoPanel=document.getElementById('infoPanel');
+  document.getElementById('infoBtn').addEventListener('click',()=>infoPanel.classList.add('open'));
+  document.getElementById('closeInfo').addEventListener('click',()=>infoPanel.classList.remove('open'));
+  infoPanel.addEventListener('click',e=>{if(e.target===infoPanel)infoPanel.classList.remove('open');});
+  document.getElementById('ctaInfo').addEventListener('click',()=>infoPanel.classList.add('open'));
+
+  // outro CTAs
+  document.getElementById('ctaBeta').addEventListener('click',()=>{
+    window.location.href='mailto:contact@mythese.fr?subject=Rejoindre%20la%20b%C3%AAta%20MyTh%C3%A8se';
+  });
+  document.getElementById('restartBtn').addEventListener('click',()=>{
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+
+  /* ===== Audio: ambient drone via WebAudio (off by default) ===== */
+  const audioBtn=document.getElementById('audioBtn');
+  let actx=null, master=null, audioOn=false, nodes=[];
+  audioBtn.addEventListener('click',()=>{
+    if(!actx){ startAudio(); audioOn=true; audioBtn.classList.add('playing'); }
+    else { audioOn=!audioOn; master.gain.exponentialRampToValueAtTime(audioOn?0.06:0.0001, actx.currentTime+0.6); audioBtn.classList.toggle('playing',audioOn); }
+  });
+  function startAudio(){
+    actx=new (window.AudioContext||window.webkitAudioContext)();
+    master=actx.createGain(); master.gain.value=0.0001; master.connect(actx.destination);
+    master.gain.exponentialRampToValueAtTime(0.06, actx.currentTime+1.2);
+    [110,164.8,220,277.2].forEach((f,i)=>{
+      const o=actx.createOscillator(); o.type=i%2?'sine':'triangle'; o.frequency.value=f;
+      const g=actx.createGain(); g.gain.value=0.25/(i+1);
+      const lfo=actx.createOscillator(); lfo.frequency.value=0.05+i*0.03;
+      const lg=actx.createGain(); lg.gain.value=0.12; lfo.connect(lg); lg.connect(g.gain);
+      o.connect(g); g.connect(master); o.start(); lfo.start();
+      nodes.push(o,lfo);
+    });
+  }
+})();
+</script>
+</body>
+</html>
