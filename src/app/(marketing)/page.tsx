@@ -17,7 +17,7 @@ export default function HomePage() {
           <h2 className="mb-5 font-serif text-3xl text-[#E1D9D1] md:text-5xl">
             Quatre chapitres pour comprendre
           </h2>
-          <p className="mx-auto mb-12 max-w-2xl text-[#a89f90]">
+          <p className="mx-auto mb-12 max-w-2xl text-[#c6bdab]">
             De la page blanche à l&apos;œuvre intègre — une traversée immersive de
             la méthode MyThèse, où la transparence du dialogue IA devient une
             preuve d&apos;intégrité.
@@ -56,21 +56,21 @@ export default function HomePage() {
             <span className="text-2xl">📚</span>
             <div>
               <div className="font-medium text-[#E1D9D1]">Sources peer-reviewed</div>
-              <div className="text-xs text-[#8f877a]">via OpenAlex (250M papers)</div>
+              <div className="text-xs text-[#a99f8c]">via OpenAlex (250M papers)</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-2xl">🇫🇷</span>
             <div>
               <div className="font-medium text-[#E1D9D1]">Méthodologie française</div>
-              <div className="text-xs text-[#8f877a]">problématique, plan binaire/ternaire</div>
+              <div className="text-xs text-[#a99f8c]">problématique, plan binaire/ternaire</div>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <span className="text-2xl">🔒</span>
             <div>
               <div className="font-medium text-[#E1D9D1]">Jamais à ta place</div>
-              <div className="text-xs text-[#8f877a]">watermark anti-fraude sur chaque output</div>
+              <div className="text-xs text-[#a99f8c]">watermark anti-fraude sur chaque output</div>
             </div>
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function HomePage() {
           <h2 className="mb-3 text-center font-serif text-3xl font-medium text-[#E1D9D1] md:text-4xl">
             Trois douleurs que tout étudiant connaît
           </h2>
-          <p className="mx-auto mb-12 max-w-2xl text-center text-[#a89f90]">
+          <p className="mx-auto mb-12 max-w-2xl text-center text-[#c6bdab]">
             Mythese ne les supprime pas. Mythese te donne les outils pour les
             surmonter — sans tricher.
           </p>
@@ -112,7 +112,7 @@ export default function HomePage() {
                 <div className="mb-2 font-serif text-xl font-medium text-[#E1D9D1]">
                   {p.title}
                 </div>
-                <p className="text-sm leading-relaxed text-[#a89f90]">{p.desc}</p>
+                <p className="text-sm leading-relaxed text-[#c6bdab]">{p.desc}</p>
               </div>
             ))}
           </div>
@@ -130,7 +130,7 @@ export default function HomePage() {
             <br />
             Le raisonnement, c&apos;est toi.
           </h2>
-          <p className="mx-auto mb-12 max-w-2xl text-center text-[#a89f90]">
+          <p className="mx-auto mb-12 max-w-2xl text-center text-[#c6bdab]">
             Mythese fonctionne en modules. Chaque module produit des suggestions
             courtes, jamais de prose à coller.
           </p>
@@ -165,10 +165,10 @@ export default function HomePage() {
                 <div className="mb-2 mt-1 font-serif text-xl font-medium text-[#E1D9D1]">
                   {s.title}
                 </div>
-                <p className="mb-3 text-sm leading-relaxed text-[#a89f90]">
+                <p className="mb-3 text-sm leading-relaxed text-[#c6bdab]">
                   {s.desc}
                 </p>
-                <span className="rounded border border-[#241f14] bg-[#100E07] px-2 py-1 text-xs text-[#8f877a]">
+                <span className="rounded border border-[#241f14] bg-[#100E07] px-2 py-1 text-xs text-[#a99f8c]">
                   {s.badge}
                 </span>
               </div>
@@ -183,7 +183,7 @@ export default function HomePage() {
           <h2 className="mb-3 text-center font-serif text-3xl font-medium text-[#E1D9D1] md:text-4xl">
             Ton mémoire, en 6 étapes claires
           </h2>
-          <p className="mx-auto mb-12 max-w-2xl text-center text-[#a89f90]">
+          <p className="mx-auto mb-12 max-w-2xl text-center text-[#c6bdab]">
             Chaque soumission met à jour ton plan de recherche. Tu sais toujours
             où tu en es — et où l&apos;IA pense qu&apos;il faut creuser.
           </p>
@@ -225,7 +225,7 @@ export default function HomePage() {
                 <div className="mb-2 font-serif text-xl font-medium text-[#E1D9D1]">
                   {step.title}
                 </div>
-                <p className="mx-auto max-w-xs text-sm text-[#a89f90]">
+                <p className="mx-auto max-w-xs text-sm text-[#c6bdab]">
                   {step.desc}
                 </p>
               </div>
@@ -256,7 +256,7 @@ export default function HomePage() {
           <h2 className="mb-3 font-serif text-3xl font-medium text-[#E1D9D1]">
             Rejoins la première promo
           </h2>
-          <p className="mb-8 text-[#a89f90]">
+          <p className="mb-8 text-[#c6bdab]">
             On lance le MVP cette semaine. Place limitée pour avoir Jean au bout
             du fil.
           </p>
