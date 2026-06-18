@@ -105,8 +105,8 @@
   .instr{margin-top:54px;font-family:var(--ui);font-style:italic;font-size:12px;letter-spacing:.12em;
     color:var(--gold);opacity:0;transform:translateY(16px);display:flex;align-items:center;gap:10px;}
   .instr::before{content:"";width:26px;height:1px;background:var(--gold);display:inline-block;}
-  .chapter.light h2 .main,.chapter.light .sub{color:var(--text);}
-  .chapter.light .num,.chapter.light h2 .the,.chapter.light .instr{color:var(--gold-deep);}
+  .chapter.light h2 .main,.chapter.light .sub{color:#211a0e;text-shadow:0 1px 0 rgba(255,255,255,.25);}
+  .chapter.light .num,.chapter.light h2 .the,.chapter.light .instr{color:#6f4a26;}
   .chapter.light .instr::before{background:var(--gold-deep);}
 
   /* ---------- Outro ---------- */
@@ -278,7 +278,7 @@
   <div class="instr" data-instr>Guidez les deux flux pour les faire converger</div>
 </section>
 
-<section class="chapter" data-chapter="3" data-theme="light">
+<section class="chapter light" data-chapter="3" data-theme="light">
   <div class="num">Chapitre 03</div>
   <h2><span class="the">La</span><span class="main">Validation</span></h2>
   <div class="subs">
@@ -628,8 +628,8 @@
     header.classList.toggle('dark', theme!=='light');
     chapterNav.classList.toggle('nav-light', theme==='light');
     chapterNav.classList.toggle('nav-dark', theme!=='light');
-    document.body.style.background = theme==='light' ? '#B7B09C' : '#0A0901';
-    gsap.to('body',{backgroundColor: theme==='light'?'#B7B09C':'#0A0901',duration:1});
+    document.body.style.background = theme==='light' ? '#a89e85' : '#0A0901';
+    gsap.to('body',{backgroundColor: theme==='light'?'#a89e85':'#0A0901',duration:1});
   }
 
   // nav click
