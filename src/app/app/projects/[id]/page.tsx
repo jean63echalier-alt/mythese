@@ -89,6 +89,20 @@ export default async function ProjectOverviewPage({
 
       <Card className="md:col-span-2">
         <CardHeader>
+          <CardTitle>Éditeur de rédaction</CardTitle>
+          <CardDescription>
+            Rédige tes sections avec plan, annotations et conseil IA croisé — le prof garde la main sur la validation.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href={`/app/editeur/${id}`}>
+            <Button>Ouvrir l'éditeur</Button>
+          </Link>
+        </CardContent>
+      </Card>
+
+      <Card className="md:col-span-2">
+        <CardHeader>
           <CardTitle>Équipe</CardTitle>
           <CardDescription>
             {memberCount === 0

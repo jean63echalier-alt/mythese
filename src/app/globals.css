@@ -39,6 +39,27 @@ body {
   margin-bottom: 0.75rem;
 }
 
+.annotation-prof {
+  background-color: rgba(31, 68, 41, 0.12);
+  border-bottom: 2px solid var(--color-forest);
+  cursor: pointer;
+}
+
+.annotation-ia {
+  background-color: rgba(123, 31, 31, 0.08);
+  border-bottom: 2px solid var(--color-burgundy-soft);
+  cursor: pointer;
+}
+
+.faute-souligne {
+  background-color: transparent;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--color-warn);
+  text-underline-offset: 3px;
+}
+
 .watermark {
   font-size: 0.7rem;
   color: var(--color-burgundy);

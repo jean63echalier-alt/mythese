@@ -167,6 +167,29 @@
 
 ---
 
+## 2026-07-17 — Éditeur de rédaction : prototype UI d'abord, pas de câblage Supabase
+
+**Decision** : livrer l'éditeur 3 colonnes (`/app/editeur/[id]`) en composant client autonome avec données mock, sans migration ni API route, avant tout branchement backend.
+
+**Why** :
+- L'archi actuelle est en pages séparées par section (état de l'art, problématique) — l'éditeur unifié est une rupture de layout et de flow qu'il faut valider en UX avant d'engager un schéma DB
+- Spec fournie recommandait explicitement un composant autonome (§5 de la spec source)
+- Route hors du layout `projects/[id]` (qui contraint à `max-w-5xl` + tabs) pour permettre le plein écran 3 colonnes
+
+**Tradeoffs** :
+- ✅ Gain : itération rapide sur l'UX sans toucher au schéma de prod
+- ❌ Coût : `Section`, `Annotation`, `ChatMessage`, `CreditUsage` (types.ts) ne persistent pas — tout est perdu au reload
+- ⚠️ Risque : si le mock diverge trop du besoin réel, le futur câblage Supabase demandera un rework
+
+**Consequences** :
+- Prochaine étape si validé : migration `sections`/`annotations`/`chat_messages`/`credit_usage` + RLS + route handlers, en remplaçant `_mock-data.ts`
+- Le contentEditable ne recalcule le surlignage qu'au montage de section (pas à chaque frappe) pour ne pas perdre le curseur — limitation connue, acceptable pour le prototype
+- Sélecteur "Vue Étudiant/Professeur" dans la toolbar est un outil de démo, à remplacer par le rôle réel (`project_members.role`) au câblage
+
+**Status** : `active`
+
+---
+
 <!-- Append nouvelles décisions ici. Format :
 ## YYYY-MM-DD — Titre court
 
