@@ -186,6 +186,29 @@
 - Le contentEditable ne recalcule le surlignage qu'au montage de section (pas à chaque frappe) pour ne pas perdre le curseur — limitation connue, acceptable pour le prototype
 - Sélecteur "Vue Étudiant/Professeur" dans la toolbar est un outil de démo, à remplacer par le rôle réel (`project_members.role`) au câblage
 
+**Status** : `superseded` (voir décision du même jour ci-dessous — le surlignage par recherche de texte est abandonné)
+
+---
+
+## 2026-07-17 — Éditeur riche (execCommand) + export DOCX/PDF, HTML devient la source de vérité
+
+**Decision** : le Bloc Texte devient un vrai éditeur formaté (gras/italique/souligné/titres/listes via `document.execCommand`, pas de lib type TipTap), `section.contenu` passe de texte brut à HTML sérialisé, et deux nouvelles dépendances (`docx`, `jspdf`) permettent d'exporter le mémoire complet en `.docx`/`.pdf` depuis le menu Fichier.
+
+**Why** :
+- Demande explicite de Jean : "un vrai éditeur de texte... + exporter en docx et pdf"
+- `execCommand` reste dépréciée mais universellement supportée ; alternative (Selection/Range fait main) = bien plus de code pour le même résultat, TipTap explicitement écarté par la spec source (§5)
+- `docx`/`jspdf` : purs JS, aucun binaire natif, seules libs viables sans Puppeteer/LibreOffice headless (incompatible Vercel serverless)
+
+**Tradeoffs** :
+- ✅ Gain : mise en forme réelle + export utilisable immédiatement, sans backend
+- ❌ Coût : l'ancien surlignage inline des annotations/fautes (recherche de sous-chaîne dans le texte brut) est **abandonné** — incompatible avec du HTML riche (une phrase annotée peut chevaucher une balise `<b>`). Fautes orthographiques : on s'appuie maintenant sur `spellCheck` natif du navigateur au lieu d'un mock de mots codés en dur — plus réaliste, mais dépend du dictionnaire de l'OS/navigateur de l'utilisateur
+- ⚠️ Risque : le PDF ne fait pas de wrap Unicode avancé (jsPDF + police helvetica standard) — accents et ligatures françaises à vérifier sur un vrai mémoire long
+
+**Consequences** :
+- `_parse-html.ts` est la seule source de vérité pour convertir le HTML de l'éditeur en blocs portables (heading/paragraph/list-item + runs bold/italic/underline), consommée par `_export-docx.ts` ET `_export-pdf.ts` — ne pas dupliquer cette logique ailleurs
+- Le contenu n'est plus synchronisé en state à chaque frappe mais **au blur** de l'éditeur (`onContentChange`) — corrige au passage une perte de données silencieuse : avant ce fix, changer de section sans blur préalable perdait les frappes non capturées
+- Au câblage Supabase : `sections.contenu` doit être stocké comme HTML (colonne `text`/`jsonb`), pas comme texte brut
+
 **Status** : `active`
 
 ---

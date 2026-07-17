@@ -16,12 +16,20 @@ export function Toolbar({
   projectTitle,
   role,
   onRoleChange,
+  onExport,
 }: {
   projectTitle: string;
   role: Role;
   onRoleChange: (r: Role) => void;
+  onExport: (format: "docx" | "pdf") => void;
 }) {
   const [open, setOpen] = useState<string | null>(null);
+
+  function handleItemClick(item: string) {
+    setOpen(null);
+    if (item === "Exporter (PDF)") onExport("pdf");
+    if (item === "Exporter (Docx)") onExport("docx");
+  }
 
   return (
     <div className="relative border-b border-[var(--color-line)] bg-[var(--color-paper)] px-3">
@@ -52,7 +60,7 @@ export function Toolbar({
                     <button
                       key={item}
                       type="button"
-                      onClick={() => setOpen(null)}
+                      onClick={() => handleItemClick(item)}
                       className="w-full text-left px-3 py-1.5 text-sm text-[var(--color-ink-soft)] hover:bg-[var(--color-line-soft)] hover:text-[var(--color-ink)]"
                     >
                       {item}

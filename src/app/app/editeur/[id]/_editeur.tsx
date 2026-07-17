@@ -7,6 +7,8 @@ import { PlanPanel } from "./_plan-panel";
 import { TextePanel } from "./_texte-panel";
 import { ChatPanel } from "./_chat-panel";
 import { SECTIONS_MOCK, CHAT_IA_MOCK, CHAT_PROF_MOCK, CREDIT_MOCK } from "./_mock-data";
+import { exportToDocx } from "./_export-docx";
+import { exportToPdf } from "./_export-pdf";
 import type { ChatMessage, Role, Section } from "./types";
 
 const REPONSES_IA_MOCK = [
@@ -89,13 +91,18 @@ export function Editeur({ projectId, projectTitle }: { projectId: string; projec
   }
 
   function handleInsert(texte: string) {
+    // TextePanel append le paragraphe au DOM puis remonte le HTML fusionné via onContentChange.
     setInsertSignal({ texte, nonce: Date.now() });
-    updateSection(activeSectionId, { contenu: `${activeSection.contenu}\n\n${texte}` });
+  }
+
+  function handleExport(format: "docx" | "pdf") {
+    if (format === "docx") exportToDocx(projectTitle, sections);
+    else exportToPdf(projectTitle, sections);
   }
 
   return (
     <div className="h-[calc(100vh-65px)] flex flex-col">
-      <Toolbar projectTitle={projectTitle} role={role} onRoleChange={setRole} />
+      <Toolbar projectTitle={projectTitle} role={role} onRoleChange={setRole} onExport={handleExport} />
 
       <div className="md:hidden flex border-b border-[var(--color-line)] text-sm">
         {(["plan", "texte", "chat"] as const).map((t) => (
@@ -133,6 +140,7 @@ export function Editeur({ projectId, projectTitle }: { projectId: string; projec
             onDemanderIA={handleDemanderIA}
             onCommenterProf={handleCommenterProf}
             onChangeStatut={(statut) => updateSection(activeSectionId, { statut })}
+            onContentChange={(html) => updateSection(activeSectionId, { contenu: html })}
             insertSignal={insertSignal}
           />
         </div>

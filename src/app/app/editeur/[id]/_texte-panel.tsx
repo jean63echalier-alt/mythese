@@ -1,46 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { FormatToolbar } from "./_format-toolbar";
 import type { Annotation, Role, Section } from "./types";
 
-function escapeHtml(s: string) {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-// Annotations n'ont pas d'offset fiable côté mock : on repère la 1re occurrence du texte ancré.
-// Recalculé uniquement au montage / changement de section, jamais pendant la frappe
-// (sinon le contentEditable perd le curseur à chaque re-render React).
-function renderHighlighted(content: string, annotations: Annotation[]) {
-  type Mark = { start: number; end: number; ann: Annotation };
-  const marks: Mark[] = [];
-  for (const ann of annotations) {
-    const idx = content.indexOf(ann.texte);
-    if (idx === -1) continue;
-    marks.push({ start: idx, end: idx + ann.texte.length, ann });
-  }
-  marks.sort((a, b) => a.start - b.start);
-
-  let html = "";
-  let cursor = 0;
-  for (const m of marks) {
-    if (m.start < cursor) continue;
-    html += escapeHtml(content.slice(cursor, m.start));
-    const cls =
-      m.ann.auteur === "faute"
-        ? "faute-souligne"
-        : m.ann.auteur === "prof"
-          ? "annotation-prof"
-          : "annotation-ia";
-    html += `<mark class="${cls}" data-annotation-id="${m.ann.id}">${escapeHtml(content.slice(m.start, m.end))}</mark>`;
-    cursor = m.end;
-  }
-  html += escapeHtml(content.slice(cursor));
-  return html || "<span class=\"text-[var(--color-ink-muted)] italic\">Section vide — commence à rédiger.</span>";
-}
+const BLOCK_TAGS = new Set(["H1", "H2", "H3", "P"]);
 
 export function TextePanel({
   section,
@@ -50,6 +15,7 @@ export function TextePanel({
   onDemanderIA,
   onCommenterProf,
   onChangeStatut,
+  onContentChange,
   insertSignal,
 }: {
   section: Section;
@@ -59,13 +25,13 @@ export function TextePanel({
   onDemanderIA: (texte: string) => void;
   onCommenterProf: (texte: string, commentaire: string) => void;
   onChangeStatut: (statut: Section["statut"]) => void;
+  onContentChange: (html: string) => void;
   insertSignal: { texte: string; nonce: number } | null;
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [floating, setFloating] = useState<{ x: number; y: number; texte: string } | null>(null);
   const [commentDraft, setCommentDraft] = useState<string | null>(null);
-
-  const html = useMemo(() => renderHighlighted(section.contenu, section.annotations), [section.id]);
+  const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setFloating(null);
@@ -76,11 +42,29 @@ export function TextePanel({
     if (!insertSignal || !editorRef.current) return;
     const p = document.createElement("p");
     p.textContent = insertSignal.texte;
-    p.className = "mt-2";
     editorRef.current.appendChild(p);
+    onContentChange(editorRef.current.innerHTML);
   }, [insertSignal]);
 
+  function refreshActiveFormats() {
+    const formats = new Set<string>();
+    for (const cmd of ["bold", "italic", "underline"]) {
+      if (document.queryCommandState(cmd)) formats.add(cmd);
+    }
+    const block = document.queryCommandValue("formatBlock").toUpperCase();
+    formats.add(BLOCK_TAGS.has(block) ? block : "P");
+    setActiveFormats(formats);
+  }
+
+  function handleCommand(cmd: string, value?: string) {
+    editorRef.current?.focus();
+    document.execCommand(cmd, false, value);
+    refreshActiveFormats();
+    if (editorRef.current) onContentChange(editorRef.current.innerHTML);
+  }
+
   function handleSelectionUp() {
+    refreshActiveFormats();
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
       setFloating(null);
@@ -128,6 +112,8 @@ export function TextePanel({
           )}
         </div>
 
+        <FormatToolbar activeFormats={activeFormats} onCommand={handleCommand} />
+
         <div className="relative">
           {floating && (
             <div
@@ -137,6 +123,7 @@ export function TextePanel({
               {role === "professeur" ? (
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     setCommentDraft(floating.texte);
                     setFloating(null);
@@ -148,6 +135,7 @@ export function TextePanel({
               ) : (
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     onDemanderIA(floating.texte);
                     setFloating(null);
@@ -188,15 +176,13 @@ export function TextePanel({
             key={section.id}
             ref={editorRef}
             contentEditable
+            spellCheck
             suppressContentEditableWarning
             onMouseUp={handleSelectionUp}
             onKeyUp={handleSelectionUp}
-            onClick={(e) => {
-              const target = (e.target as HTMLElement).closest("[data-annotation-id]");
-              if (target) onSelectAnnotation(target.getAttribute("data-annotation-id")!);
-            }}
+            onBlur={() => editorRef.current && onContentChange(editorRef.current.innerHTML)}
             className="prose-mythese min-h-[50vh] text-[15px] leading-relaxed outline-none"
-            dangerouslySetInnerHTML={{ __html: html }}
+            dangerouslySetInnerHTML={{ __html: section.contenu || "<p><br></p>" }}
           />
         </div>
 
@@ -219,7 +205,7 @@ export function TextePanel({
                 <span className={cn("text-xs font-medium", authorColor(a.auteur))}>
                   {authorLabel(a.auteur)}
                 </span>
-                <p className="text-[var(--color-ink-soft)] mt-0.5">{a.commentaire}</p>
+                <p className="text-[var(--color-ink-soft)] mt-0.5">« {a.texte} » — {a.commentaire}</p>
               </button>
             ))}
           </div>

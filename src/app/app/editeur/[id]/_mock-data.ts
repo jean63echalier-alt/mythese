@@ -7,7 +7,7 @@ export const SECTIONS_MOCK: Section[] = [
     ordre: 1,
     statut: "valide",
     contenu:
-      "La littérature récente sur l'apprentissage par renforcement distribué converge vers trois familles d'approches. Kalashnikov et al. (2023) montrent que la parallélisation naïve degrade la convergeance dans 40% des cas étudiés. Cette observation rejoint les travaux de Chen (2022) sur la stabilité des gradients.",
+      "<p>La littérature récente sur l'apprentissage par renforcement distribué converge vers <b>trois familles d'approches</b>. Kalashnikov et al. (2023) montrent que la parallélisation naïve degrade la convergeance dans 40% des cas étudiés. Cette observation rejoint les travaux de Chen (2022) sur la stabilité des gradients.</p><ul><li>Approches synchrones</li><li>Approches asynchrones</li><li>Approches hybrides</li></ul>",
     annotations: [
       {
         id: "a1",
@@ -33,7 +33,7 @@ export const SECTIONS_MOCK: Section[] = [
     ordre: 2,
     statut: "valide",
     contenu:
-      "Dans quelle mesure la parallélisation asynchrone des agents affecte-t-elle la qualité de convergeance dans les environnements à récompense éparse ?",
+      "<p>Dans quelle mesure la parallélisation asynchrone des agents affecte-t-elle la qualité de convergeance dans les environnements à récompense éparse ?</p>",
     annotations: [],
   },
   {
@@ -42,7 +42,7 @@ export const SECTIONS_MOCK: Section[] = [
     ordre: 3,
     statut: "en_cours",
     contenu:
-      "Le protocole expérimental repose sur une comparaison contrôlée entre trois configurations d'agents. Chaque configuration est évaluée sur 5 seeds aléatoires afin d'assurer la robustesse statistique des résultats obtenus.",
+      "<p>Le protocole expérimental repose sur une comparaison contrôlée entre trois configurations d'agents. Chaque configuration est évaluée sur 5 seeds aléatoires afin d'assurer la robustesse statistique des résultats obtenus.</p>",
     annotations: [
       {
         id: "a3",
@@ -57,7 +57,7 @@ export const SECTIONS_MOCK: Section[] = [
   },
   { id: "analyse-resultats", nom: "Analyse / Résultats", ordre: 4, statut: "non_commence", contenu: "", annotations: [] },
   { id: "discussion", nom: "Discussion", ordre: 5, statut: "non_commence", contenu: "", annotations: [] },
-  { id: "conclusion", nom: "Conclusion", ordre: 6, statut: "a_revoir", contenu: "Section à retravailler suite aux retours du comité.", annotations: [] },
+  { id: "conclusion", nom: "Conclusion", ordre: 6, statut: "a_revoir", contenu: "<p>Section à retravailler suite aux retours du comité.</p>", annotations: [] },
 ];
 
 export const CHAT_IA_MOCK: ChatMessage[] = [
