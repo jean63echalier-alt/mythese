@@ -64,15 +64,15 @@ export function ExperienceHero() {
       }`}
     >
       <p
-        className="hero-rise mb-7 text-xs uppercase tracking-[0.4em] text-[#C89B5A]"
+        className="hero-rise mb-7 text-xs uppercase tracking-[0.4em] text-[var(--color-burgundy)]"
         style={{ animationDelay: "0.1s" }}
       >
         Une expérience immersive
       </p>
 
-      <h1 className="font-serif leading-[0.95] text-[#E1D9D1]">
+      <h1 className="font-serif leading-[0.95] text-[var(--color-ink)]">
         <span
-          className="hero-rise block text-3xl italic text-[#C89B5A] md:text-5xl"
+          className="hero-rise block text-3xl italic text-[var(--color-burgundy)] md:text-5xl"
           style={{ animationDelay: "0.25s" }}
         >
           Ton mémoire,
@@ -86,7 +86,7 @@ export function ExperienceHero() {
       </h1>
 
       <p
-        className="hero-rise mt-8 max-w-xl text-base leading-relaxed text-[#cfc7ba] md:text-lg"
+        className="hero-rise mt-8 max-w-xl text-base leading-relaxed text-[var(--color-ink-soft)] md:text-lg"
         style={{ animationDelay: "0.6s" }}
       >
         Deux intelligences artificielles dialoguent sous tes yeux. Tu vois chaque
@@ -100,20 +100,20 @@ export function ExperienceHero() {
         <a
           href="/experience.html"
           onClick={markSeen}
-          className="inline-flex items-center gap-2 rounded-full border border-[#E1D9D1] px-9 py-4 text-sm uppercase tracking-[0.2em] text-[#E1D9D1] transition-colors duration-300 hover:bg-[#E1D9D1] hover:text-[#0A0901]"
+          className="inline-flex items-center gap-2 rounded-full border border-[var(--color-burgundy)] px-9 py-4 text-sm uppercase tracking-[0.2em] text-[var(--color-burgundy)] transition-colors duration-300 hover:bg-[var(--color-burgundy)] hover:text-white"
         >
           ✦ Vivre l&apos;expérience
         </a>
         <button
           onClick={explore}
-          className="text-[11px] uppercase tracking-[0.25em] text-[#8f877a] transition-colors hover:text-[#C89B5A]"
+          className="text-[11px] uppercase tracking-[0.25em] text-[var(--color-ink-muted)] transition-colors hover:text-[var(--color-burgundy)]"
         >
           ou explorer le site ↓
         </button>
       </div>
 
       <div
-        className="hero-rise absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3 text-[#8f877a]"
+        className="hero-rise absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3 text-[var(--color-ink-muted)]"
         style={{ animationDelay: "1.1s" }}
       >
         <span className="text-[10px] uppercase tracking-[0.3em]">
