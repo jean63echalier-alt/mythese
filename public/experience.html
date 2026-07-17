@@ -305,7 +305,7 @@
   <h2><span class="the">Votre mémoire</span><span class="main">commence ici</span></h2>
   <p>MyThèse transforme l'IA en partenaire de réflexion transparent. Vous restez l'auteur, accompagné jusqu'à la soutenance.</p>
   <div class="cta-row">
-    <button class="pill solid" id="ctaBeta">Rejoindre la bêta</button>
+    <button class="pill solid" id="ctaBeta">Essayer MyThèse</button>
     <button class="pill ghost" id="ctaInfo">En savoir plus</button>
   </div>
   <div class="restart" id="restartBtn">↻ Revivre l'expérience</div>
@@ -660,7 +660,7 @@
 
   // outro CTAs
   document.getElementById('ctaBeta').addEventListener('click',()=>{
-    window.location.href='mailto:jean63.echalier@gmail.com?subject=Rejoindre%20la%20b%C3%AAta%20MyTh%C3%A8se';
+    window.location.href='/login';
   });
   document.getElementById('restartBtn').addEventListener('click',()=>{
     window.scrollTo({top:0,behavior:'smooth'});
