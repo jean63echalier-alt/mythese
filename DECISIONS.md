@@ -5,6 +5,29 @@
 
 ---
 
+## 2026-07-17 (soir) — Plan de recherche gaté au niveau compte (annule partiellement la décision du matin)
+
+**Decision** : Le Plan de recherche (`/api/plan/classifier`, `/api/plan/conseil-ia`) est maintenant gaté, mais au niveau **compte** (`isAccountUnlocked`) et non projet — 0 usage gratuit, débloqué par n'importe quel paiement actif (abo 19€/mois OU un one-shot 39€, même sans projet précis associé).
+
+**Why** :
+- Jean a explicitement demandé que le Plan de recherche soit payant après avoir testé la beta
+- ⚠️ Cette décision **contredit partiellement** l'entrée du 2026-07-17 (matin) qui laissait le Plan de recherche hors gate — la raison invoquée alors (pas de `project_id`) reste vraie mais n'empêchait pas un gate compte-scoped, qui ne nécessite aucune migration de schéma
+- Le one-shot 39€ déclenché depuis le Plan de recherche crée un paiement avec `project_id = null` (colonne déjà nullable) — ne débloque aucun projet Module 1/2 spécifique, mais compte pour `isAccountUnlocked`
+
+**Tradeoffs** :
+- ✅ Gain : aucune migration nécessaire (`payments.project_id` déjà nullable), cohérent avec le pricing "1 des 2 forfaits débloque tout"
+- ❌ Coût : un one-shot 39€ payé "à vide" (sans projet) ne débloque toujours pas un projet spécifique — UX à clarifier si confusion des testeurs
+- ⚠️ Risque : `isAccountUnlocked` et `isProjectUnlocked` sont deux fonctions proches mais non factorisées (dupliquées volontairement pour rester simples) — si la logique de déblocage change, mettre à jour les deux
+
+**Consequences** :
+- `src/lib/gate.ts` : nouvelle fonction `isAccountUnlocked()`
+- `/api/checkout` : `projectId` redevenu optionnel pour `type: "one_shot"` (avant : requis)
+- `PaywallModal` : prop `projectId` optionnelle + `title` personnalisable
+
+**Status** : `active`
+
+---
+
 ## 2026-07-17 — Freemium gate + Stripe : scope Module 1/2 uniquement, pas le Plan de recherche
 
 **Decision** : Le gate freemium (1 usage gratuit par projet, puis mur 39€ one-shot / 19€ mois) s'applique à `searches` (Module 1) et `problematiques` (Module 2) — tous deux `project_id`-scoped. Le Plan de recherche (`/app/plan`, `soumissions`/`conseils_ia`) reste hors gate : il est `user_id`-scoped (cf. décision 2026-06-14), pas rattachable à un projet sans restructuration du schéma.

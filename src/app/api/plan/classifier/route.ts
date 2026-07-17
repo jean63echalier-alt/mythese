@@ -4,6 +4,7 @@ import { anthropic, MODELS } from "@/lib/anthropic";
 import { extractText } from "@/lib/extractors";
 import { CLASSIFIER_SYSTEM_PROMPT, statutFromLabel } from "@/lib/plan";
 import { parseJsonLoose } from "@/lib/utils";
+import { isAccountUnlocked } from "@/lib/gate";
 
 export const maxDuration = 60;
 
@@ -13,6 +14,13 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  if (!(await isAccountUnlocked(supabase, user.id))) {
+    return NextResponse.json(
+      { error: "quota_exceeded", message: "Le Plan de recherche nécessite un déblocage (39€ ou 19€/mois)." },
+      { status: 402 },
+    );
+  }
 
   const form = await req.formData();
   const texte = form.get("texte");

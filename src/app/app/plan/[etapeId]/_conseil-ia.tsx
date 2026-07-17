@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea, Label } from "@/components/ui/input";
 import { Watermark } from "@/components/ui/watermark";
+import { PaywallModal } from "@/components/paywall-modal";
 
 type Avis = { avis_claude: string; avis_gpt: string; synthese: string };
 
@@ -15,6 +16,7 @@ export function ConseilIA({ etapeId, defaultTexte }: { etapeId: number; defaultT
   const [avis, setAvis] = useState<Avis | null>(null);
   const [open, setOpen] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [paywall, setPaywall] = useState(false);
 
   async function run() {
     if (!texte.trim() || !question.trim()) {
@@ -30,6 +32,11 @@ export function ConseilIA({ etapeId, defaultTexte }: { etapeId: number; defaultT
         body: JSON.stringify({ etape_id: etapeId, texte_soumis: texte, question }),
       });
       const data = await res.json();
+      if (res.status === 402) {
+        setStatus("idle");
+        setPaywall(true);
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? "Erreur");
       setAvis(data);
       setStatus("idle");
@@ -98,6 +105,14 @@ export function ConseilIA({ etapeId, defaultTexte }: { etapeId: number; defaultT
             </div>
           )}
         </div>
+      )}
+
+      {paywall && (
+        <PaywallModal
+          title="Plan de recherche verrouillé"
+          message="Le Plan de recherche nécessite un déblocage (39€ un mémoire, ou 19€/mois illimité)."
+          onClose={() => setPaywall(false)}
+        />
       )}
     </div>
   );

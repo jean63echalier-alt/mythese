@@ -26,6 +26,32 @@ export async function isProjectUnlocked(
   return !!payment;
 }
 
+/** Le Plan de recherche n'est pas rattaché à un projet (user_id-scoped) : débloqué
+ * par n'importe quel paiement actif du compte (abo 19€/mois, ou un one-shot 39€,
+ * même s'il ne cible aucun projet précis). Aucun usage gratuit. */
+export async function isAccountUnlocked(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("subscription_status")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (profile?.subscription_status === "active") return true;
+
+  const { data: payment } = await supabase
+    .from("payments")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("type", "one_shot")
+    .eq("status", "active")
+    .gt("unlocked_until", new Date().toISOString())
+    .limit(1)
+    .maybeSingle();
+  return !!payment;
+}
+
 type GatedTable = "searches" | "problematiques";
 
 /** 1 usage gratuit par projet sur Module 1 (searches) et Module 2 (problematiques).

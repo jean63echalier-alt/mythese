@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 
 export function PaywallModal({
   projectId,
+  title = "Recherche gratuite utilisée",
   message,
   onClose,
 }: {
-  projectId: string;
+  projectId?: string;
+  title?: string;
   message: string;
   onClose: () => void;
 }) {
@@ -41,7 +43,7 @@ export function PaywallModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <Card className="max-w-md w-full">
         <CardHeader>
-          <CardTitle>Recherche gratuite utilisée</CardTitle>
+          <CardTitle>{title}</CardTitle>
           <CardDescription>{message}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -50,8 +52,10 @@ export function PaywallModal({
             disabled={loading !== null}
             className="w-full text-left rounded-md border border-[var(--color-line)] p-3 hover:bg-[var(--color-cream)] disabled:opacity-50"
           >
-            <div className="font-medium">Débloquer ce projet — 39 €</div>
-            <div className="text-sm text-[var(--color-ink-muted)]">4 modules illimités sur ce mémoire, 90 jours</div>
+            <div className="font-medium">{projectId ? "Débloquer ce projet" : "Débloquer un mémoire"} — 39 €</div>
+            <div className="text-sm text-[var(--color-ink-muted)]">
+              {projectId ? "4 modules illimités sur ce mémoire, 90 jours" : "Débloque aussi le Plan de recherche, 90 jours"}
+            </div>
           </button>
           <button
             onClick={() => goToCheckout("subscription")}

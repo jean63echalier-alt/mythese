@@ -75,7 +75,7 @@ Le magic link email fonctionne aussi (Supabase l'a activé par défaut).
 
 ## Activer Stripe (freemium gate — étape manuelle Jean)
 
-Gate : 1 recherche Module 1 (10 sources) + 1 génération Module 2 gratuites par projet. Au-delà, mur de paiement.
+Gate : 1 recherche Module 1 (10 sources) + 1 génération Module 2 gratuites par projet. Au-delà, mur de paiement. Le Plan de recherche (`/app/plan`) n'a aucun usage gratuit — débloqué par n'importe quel paiement actif (abo ou one-shot, même sans projet associé).
 
 1. Dashboard Stripe > Produits > créer 2 produits :
    - **Mémoire complet** — prix unique 39 € → copier le `price_id` dans `STRIPE_PRICE_ONE_SHOT`

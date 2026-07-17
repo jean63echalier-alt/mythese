@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea, Label } from "@/components/ui/input";
+import { PaywallModal } from "@/components/paywall-modal";
 import { ETAPES } from "@/lib/plan";
 
 export function SubmissionForm({ etapeId }: { etapeId?: number }) {
@@ -13,6 +14,7 @@ export function SubmissionForm({ etapeId }: { etapeId?: number }) {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [result, setResult] = useState<{ id: number; statut: string; justification: string }[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [paywall, setPaywall] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,6 +34,11 @@ export function SubmissionForm({ etapeId }: { etapeId?: number }) {
     try {
       const res = await fetch("/api/plan/classifier", { method: "POST", body: form });
       const data = await res.json();
+      if (res.status === 402) {
+        setStatus("idle");
+        setPaywall(true);
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? "Erreur");
       setResult(data.etapes ?? []);
       setTexte("");
@@ -85,6 +92,14 @@ export function SubmissionForm({ etapeId }: { etapeId?: number }) {
             </p>
           ))}
         </div>
+      )}
+
+      {paywall && (
+        <PaywallModal
+          title="Plan de recherche verrouillé"
+          message="Le Plan de recherche nécessite un déblocage (39€ un mémoire, ou 19€/mois illimité)."
+          onClose={() => setPaywall(false)}
+        />
       )}
     </form>
   );

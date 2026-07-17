@@ -15,17 +15,13 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 });
   }
-  if (payload.type === "one_shot" && !payload.projectId) {
-    return NextResponse.json({ error: "projectId requis pour un déblocage one-shot" }, { status: 400 });
-  }
-
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://mythese.com";
   const returnPath =
-    payload.type === "one_shot" ? `/app/projects/${payload.projectId}` : "/app";
+    payload.type === "one_shot" && payload.projectId ? `/app/projects/${payload.projectId}` : "/app";
 
   const { data: profile } = await supabase
     .from("profiles")

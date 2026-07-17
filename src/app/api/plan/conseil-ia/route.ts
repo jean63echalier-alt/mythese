@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { anthropic, MODELS } from "@/lib/anthropic";
 import { openai, GPT_MODEL } from "@/lib/openai";
 import { ETAPES, claudeAdvicePrompt, gptAdvicePrompt, synthesePrompt } from "@/lib/plan";
+import { isAccountUnlocked } from "@/lib/gate";
 
 export const maxDuration = 60;
 
@@ -26,6 +27,13 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  if (!(await isAccountUnlocked(supabase, user.id))) {
+    return NextResponse.json(
+      { error: "quota_exceeded", message: "Le Plan de recherche nécessite un déblocage (39€ ou 19€/mois)." },
+      { status: 402 },
+    );
+  }
 
   const etape = ETAPES.find((e) => e.id === payload.etape_id);
   if (!etape) return NextResponse.json({ error: "Étape inconnue" }, { status: 400 });
