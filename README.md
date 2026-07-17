@@ -60,18 +60,18 @@ Idempotentes (DROP IF EXISTS / CREATE IF NOT EXISTS partout). Si tu modifies le 
    - `mythese.com` A → `76.76.21.21`
    - `www.mythese.com` CNAME → `cname.vercel-dns.com`
    - `mythese.fr` redirect 301 → `mythese.com`
-5. Dans Supabase > Authentication > URL Configuration : ajouter `https://mythese.com/auth/callback` aux Redirect URLs
+5. Dans Supabase > Authentication > URL Configuration : **Site URL = `https://mythese.com`** (PAS `http://localhost:3000`, valeur par défaut Supabase jamais changée jusqu'au 2026-07-17) + Redirect URLs = `https://mythese.com/auth/callback` et `https://mythese.com/**`
 
-## Activer Google OAuth (étape manuelle Jean)
+⚠️ Piège vécu 2026-07-17 : le Client ID/Secret Google étaient corrects mais le Site URL Supabase était resté sur `localhost:3000` (défaut projet neuf). Tout callback OAuth/magic link retombait silencieusement sur localhost après une auth Google réussie. Toujours vérifier cette page en premier si l'auth "marche mais ne redirige pas correctement".
 
-Pas activé par défaut. Pour activer :
+## Google OAuth — activé (2026-07-17)
 
-1. Google Cloud Console > Créer un OAuth Client ID type "Web application"
+1. Google Cloud Console > OAuth Client ID type "Web application"
 2. Authorized redirect URIs : `https://zheqsaeieqrpxxxuzpcf.supabase.co/auth/v1/callback`
-3. Copier Client ID + Secret
-4. Supabase > Authentication > Providers > Google : coller les deux
+3. Client ID + Secret collés dans Supabase > Authentication > Providers > Google
+4. Voir le piège Site URL ci-dessus (point 5) — c'était la vraie cause du dernier blocage, pas le provider Google lui-même
 
-Sans cette étape, le bouton "Continuer avec Google" affichera une erreur. Le magic link email fonctionne dès le déploiement (Supabase l'a activé par défaut).
+Le magic link email fonctionne aussi (Supabase l'a activé par défaut).
 
 ## Activer Stripe (freemium gate — étape manuelle Jean)
 
