@@ -17,11 +17,13 @@ export function Toolbar({
   role,
   onRoleChange,
   onExport,
+  onOpenSources,
 }: {
   projectTitle: string;
   role: Role;
   onRoleChange: (r: Role) => void;
   onExport: (format: "docx" | "pdf") => void;
+  onOpenSources: () => void;
 }) {
   const [open, setOpen] = useState<string | null>(null);
 
@@ -29,6 +31,7 @@ export function Toolbar({
     setOpen(null);
     if (item === "Exporter (PDF)") onExport("pdf");
     if (item === "Exporter (Docx)") onExport("docx");
+    if (item === "Citation") onOpenSources();
   }
 
   return (

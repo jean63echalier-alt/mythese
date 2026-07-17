@@ -4,31 +4,32 @@ import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Toolbar } from "./_toolbar";
 import { PlanPanel } from "./_plan-panel";
-import { TextePanel } from "./_texte-panel";
+import { TextePanel, type TextePanelHandle } from "./_texte-panel";
 import { ChatPanel } from "./_chat-panel";
-import { SECTIONS_MOCK, CHAT_IA_MOCK, CHAT_PROF_MOCK, CREDIT_MOCK } from "./_mock-data";
+import { SECTIONS_MOCK, CHAT_PROF_MOCK, CREDIT_MOCK, SOURCES_MOCK } from "./_mock-data";
 import { exportToDocx } from "./_export-docx";
 import { exportToPdf } from "./_export-pdf";
-import type { ChatMessage, Role, Section } from "./types";
-
-const REPONSES_IA_MOCK = [
-  "Bonne piste. Pense à justifier chaque choix méthodologique par une référence — ça renforce la crédibilité de la section.",
-  "Je peux reformuler ce passage pour plus de clarté, ou l'étoffer avec un exemple concret. Que préfères-tu ?",
-  "Attention à la cohérence des temps verbaux dans ce paragraphe — tu passes du présent au passé sans transition.",
-];
+import { parseBibtex, escapeHtml } from "./_bibtex";
+import type { ChatMessage, EditProposal, Role, Section, Source } from "./types";
 
 export function Editeur({ projectId, projectTitle }: { projectId: string; projectTitle: string }) {
   const [role, setRole] = useState<Role>("etudiant");
   const [sections, setSections] = useState<Section[]>(SECTIONS_MOCK);
   const [activeSectionId, setActiveSectionId] = useState(sections[0].id);
   const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
-  const [chatIa, setChatIa] = useState<ChatMessage[]>(CHAT_IA_MOCK);
+  const [chatIa, setChatIa] = useState<ChatMessage[]>([]);
+  const [chatDirecteur, setChatDirecteur] = useState<ChatMessage[]>([]);
   const [chatProf, setChatProf] = useState<ChatMessage[]>(CHAT_PROF_MOCK);
   const [credit, setCredit] = useState(CREDIT_MOCK);
   const [prefillChat, setPrefillChat] = useState("");
-  const [insertSignal, setInsertSignal] = useState<{ texte: string; nonce: number } | null>(null);
+  const [editContext, setEditContext] = useState<{ blocIndex: number; blocHtml: string; selectionTexte: string } | null>(null);
+  const [pendingEdit, setPendingEdit] = useState<EditProposal | null>(null);
+  const [editLoadingBlocIndex, setEditLoadingBlocIndex] = useState<number | null>(null);
   const [chatCollapsed, setChatCollapsed] = useState(false);
   const [mobileTab, setMobileTab] = useState<"plan" | "texte" | "chat">("texte");
+  const [sources, setSources] = useState<Source[]>(SOURCES_MOCK);
+  const [focusSourcesSignal, setFocusSourcesSignal] = useState(0);
+  const textePanelRef = useRef<TextePanelHandle>(null);
 
   const activeSection = sections.find((s) => s.id === activeSectionId) ?? sections[0];
 
@@ -64,25 +65,120 @@ export function Editeur({ projectId, projectTitle }: { projectId: string; projec
     });
   }
 
-  function handleDemanderIA(texte: string) {
+  function handleDemanderIA(texte: string, blocIndex: number, blocHtml: string) {
     setPrefillChat(`Concernant « ${texte} » : `);
+    setEditContext({ blocIndex, blocHtml, selectionTexte: texte });
     setChatCollapsed(false);
     setMobileTab("chat");
   }
 
-  function handleSendIa(texte: string) {
+  async function handleSendIa(texte: string) {
     const now = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", contenu: texte, timestamp: now };
     setChatIa((prev) => [...prev, userMsg]);
     setPrefillChat("");
-    setCredit((c) => ({ ...c, utilise: Math.min(c.quota, c.utilise + 6) }));
-    setTimeout(() => {
-      const reply = REPONSES_IA_MOCK[Math.floor(Math.random() * REPONSES_IA_MOCK.length)];
+
+    const context = editContext;
+    setEditContext(null);
+
+    if (!context) {
+      try {
+        const res = await fetch("/api/editeur/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: texte,
+            history: chatIa.map((m) => ({ role: m.role, contenu: m.contenu })),
+            sectionNom: activeSection.nom,
+            sectionContenu: activeSection.contenu,
+          }),
+        });
+        if (!res.ok) throw new Error(`chat ${res.status}`);
+        const data: { reponse: string } = await res.json();
+        setChatIa((prev) => [
+          ...prev,
+          { id: crypto.randomUUID(), role: "assistant", contenu: data.reponse, timestamp: now },
+        ]);
+        setCredit((c) => ({ ...c, utilise: Math.min(c.quota, c.utilise + 6) }));
+      } catch (e) {
+        console.error("editeur chat", e);
+        setChatIa((prev) => [
+          ...prev,
+          { id: crypto.randomUUID(), role: "assistant", contenu: "Réponse indisponible — réessaie.", timestamp: now },
+        ]);
+      }
+      return;
+    }
+
+    setEditLoadingBlocIndex(context.blocIndex);
+    try {
+      const res = await fetch("/api/editeur/edit-suggestion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blocHtml: context.blocHtml,
+          selectionTexte: context.selectionTexte,
+          instruction: texte,
+          sectionNom: activeSection.nom,
+        }),
+      });
+      if (!res.ok) throw new Error(`edit-suggestion ${res.status}`);
+      const data: { html: string; resume: string } = await res.json();
+      const proposal: EditProposal = {
+        id: crypto.randomUUID(),
+        blocIndex: context.blocIndex,
+        oldHtml: context.blocHtml,
+        newHtml: data.html,
+        resume: data.resume,
+        statut: "pending",
+      };
+      setPendingEdit(proposal);
       setChatIa((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "assistant", contenu: reply, timestamp: now },
+        { id: crypto.randomUUID(), role: "assistant", contenu: data.resume, timestamp: now, edit: proposal },
       ]);
-    }, 700);
+      setCredit((c) => ({ ...c, utilise: Math.min(c.quota, c.utilise + 6) }));
+    } catch (e) {
+      console.error("edit-suggestion", e);
+      setChatIa((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: "assistant", contenu: "Suggestion indisponible — réessaie.", timestamp: now },
+      ]);
+    } finally {
+      setEditLoadingBlocIndex(null);
+    }
+  }
+
+  async function handleSendDirecteur(texte: string) {
+    const now = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    setChatDirecteur((prev) => [...prev, { id: crypto.randomUUID(), role: "user", contenu: texte, timestamp: now }]);
+
+    try {
+      const res = await fetch("/api/editeur/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: texte,
+          persona: "directeur",
+          history: chatDirecteur.map((m) => ({ role: m.role, contenu: m.contenu })),
+          sectionNom: activeSection.nom,
+          sectionContenu: activeSection.contenu,
+        }),
+      });
+      if (!res.ok) throw new Error(`chat ${res.status}`);
+      const data: { reponse: string } = await res.json();
+      setChatDirecteur((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: "assistant", contenu: data.reponse, timestamp: now },
+      ]);
+      setCredit((c) => ({ ...c, utilise: Math.min(c.quota, c.utilise + 6) }));
+    } catch (e) {
+      console.error("editeur chat directeur", e);
+      setChatDirecteur((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: "assistant", contenu: "Réponse indisponible — réessaie.", timestamp: now },
+      ]);
+    }
   }
 
   function handleSendProf(texte: string) {
@@ -90,9 +186,61 @@ export function Editeur({ projectId, projectTitle }: { projectId: string; projec
     setChatProf((prev) => [...prev, { id: crypto.randomUUID(), role: "user", contenu: texte, timestamp: now }]);
   }
 
-  function handleInsert(texte: string) {
-    // TextePanel append le paragraphe au DOM puis remonte le HTML fusionné via onContentChange.
-    setInsertSignal({ texte, nonce: Date.now() });
+  function handleAddSource(source: Omit<Source, "id" | "cited">) {
+    setSources((prev) => [...prev, { ...source, id: crypto.randomUUID(), cited: false }]);
+  }
+
+  function handleDeleteSource(id: string) {
+    setSources((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  function handleInsertCitation(source: Source) {
+    const authorLast = source.auteur.split(",")[0].trim();
+    const html = `<span class="cite">(${escapeHtml(authorLast)}, ${escapeHtml(source.annee)})</span>&nbsp;`;
+    textePanelRef.current?.insertHtml(html);
+    setSources((prev) => prev.map((s) => (s.id === source.id ? { ...s, cited: true } : s)));
+  }
+
+  function handleGenerateBiblio() {
+    const cited = sources.filter((s) => s.cited).slice().sort((a, b) => a.auteur.localeCompare(b.auteur));
+    if (cited.length === 0) return;
+    const entries = cited
+      .map((s) => `${escapeHtml(s.auteur)} (${escapeHtml(s.annee)}). ${escapeHtml(s.titre)}${s.editeur ? ". " + escapeHtml(s.editeur) : ""}.`)
+      .join("<br>");
+    textePanelRef.current?.appendOrReplaceBlock(
+      "bibliographie-section",
+      `<section id="bibliographie-section"><h2>Bibliographie</h2><p>${entries}</p></section>`,
+    );
+  }
+
+  function handleImportBibtex(text: string): number {
+    const parsed = parseBibtex(text);
+    if (parsed.length > 0) {
+      setSources((prev) => [...prev, ...parsed.map((p) => ({ ...p, id: crypto.randomUUID(), cited: false }))]);
+    }
+    return parsed.length;
+  }
+
+  function handleOpenSources() {
+    setChatCollapsed(false);
+    setMobileTab("chat");
+    setFocusSourcesSignal((v) => v + 1);
+  }
+
+  function handleAcceptEdit() {
+    if (!pendingEdit) return;
+    setChatIa((prev) =>
+      prev.map((m) => (m.edit?.id === pendingEdit.id ? { ...m, edit: { ...pendingEdit, statut: "accepted" } } : m)),
+    );
+    setPendingEdit(null);
+  }
+
+  function handleRejectEdit() {
+    if (!pendingEdit) return;
+    setChatIa((prev) =>
+      prev.map((m) => (m.edit?.id === pendingEdit.id ? { ...m, edit: { ...pendingEdit, statut: "rejected" } } : m)),
+    );
+    setPendingEdit(null);
   }
 
   function handleExport(format: "docx" | "pdf") {
@@ -102,7 +250,7 @@ export function Editeur({ projectId, projectTitle }: { projectId: string; projec
 
   return (
     <div className="h-[calc(100vh-65px)] flex flex-col">
-      <Toolbar projectTitle={projectTitle} role={role} onRoleChange={setRole} onExport={handleExport} />
+      <Toolbar projectTitle={projectTitle} role={role} onRoleChange={setRole} onExport={handleExport} onOpenSources={handleOpenSources} />
 
       <div className="md:hidden flex border-b border-[var(--color-line)] text-sm">
         {(["plan", "texte", "chat"] as const).map((t) => (
@@ -133,6 +281,7 @@ export function Editeur({ projectId, projectTitle }: { projectId: string; projec
 
         <div className={cn("flex-1 min-w-0", mobileTab === "texte" ? "block" : "hidden md:block")}>
           <TextePanel
+            ref={textePanelRef}
             section={activeSection}
             role={role}
             activeAnnotationId={activeAnnotationId}
@@ -141,7 +290,10 @@ export function Editeur({ projectId, projectTitle }: { projectId: string; projec
             onCommenterProf={handleCommenterProf}
             onChangeStatut={(statut) => updateSection(activeSectionId, { statut })}
             onContentChange={(html) => updateSection(activeSectionId, { contenu: html })}
-            insertSignal={insertSignal}
+            pendingEdit={pendingEdit}
+            editLoadingBlocIndex={editLoadingBlocIndex}
+            onAcceptEdit={handleAcceptEdit}
+            onRejectEdit={handleRejectEdit}
           />
         </div>
 
@@ -156,14 +308,22 @@ export function Editeur({ projectId, projectTitle }: { projectId: string; projec
           <ChatPanel
             role={role}
             chatIa={chatIa}
+            chatDirecteur={chatDirecteur}
             chatProf={chatProf}
             credit={credit}
             prefill={prefillChat}
             onSendIa={handleSendIa}
+            onSendDirecteur={handleSendDirecteur}
             onSendProf={handleSendProf}
-            onInsert={handleInsert}
             collapsed={chatCollapsed}
             onToggleCollapsed={() => setChatCollapsed((v) => !v)}
+            sources={sources}
+            onAddSource={handleAddSource}
+            onDeleteSource={handleDeleteSource}
+            onInsertSource={handleInsertCitation}
+            onGenerateBiblio={handleGenerateBiblio}
+            onImportBibtex={handleImportBibtex}
+            focusSourcesSignal={focusSourcesSignal}
           />
         </div>
       </div>

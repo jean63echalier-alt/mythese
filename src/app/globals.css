@@ -45,6 +45,8 @@ body {
 .prose-mythese ul, .prose-mythese ol { margin: 0.5rem 0 0.5rem 1.25rem; }
 .prose-mythese ul { list-style: disc; }
 .prose-mythese ol { list-style: decimal; }
+.prose-mythese .cite { color: var(--color-burgundy); }
+.prose-mythese #bibliographie-section { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--color-line); }
 
 .watermark {
   font-size: 0.7rem;

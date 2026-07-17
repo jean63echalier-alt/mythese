@@ -5,6 +5,74 @@
 
 ---
 
+## 2026-07-17 — Éditeur : panneau Sources/bibliographie, persona Directeur de recherche, import BibTeX (pas Zotero API)
+
+**Decision** : trois ajouts à l'éditeur, tous en state client mock (aucune persistance Supabase, cohérent avec la décision « prototype d'abord » déjà active) :
+1. Panneau **Sources** (`_sources-panel.tsx`) : ajout manuel, insertion de citation au curseur réel dans le contentEditable, génération d'une section bibliographie triable.
+2. Persona **Directeur de recherche** : deuxième onglet IA dans le chat, ton socratique/exigeant (`DIRECTEUR_SYSTEM_PROMPT`), même garde-fou anti-ghostwriting que le coach. `/api/editeur/chat` accepte désormais `persona: "coach" | "directeur"`.
+3. **Import BibTeX** (`_bibtex.ts`, parser regex maison) au lieu d'une intégration API Zotero directe.
+
+**Why** :
+- Demande de Jean, à partir d'un prototype HTML externe (`CLAUDEmythese.md` / démo statique) déjà dépassé par le vrai code de l'éditeur sur presque tous les autres points (export docx/pdf, chat connecté, édition chirurgicale) — seuls Sources/Directeur/Zotero étaient de vrais gaps.
+- Zotero API réelle nécessite un token utilisateur (OAuth ou clé API manuelle) que je ne peux pas obtenir de façon sûre en session non interactive ; Zotero exporte nativement en BibTeX, donc l'import BibTeX couvre le besoin réel (Zotero, Mendeley, EndNote) sans dépendance externe ni secret à gérer. Zotero API directe reste à évaluer si le besoin d'auto-sync (sans export manuel) se confirme.
+
+**Tradeoffs** :
+- ✅ Gain : les 3 features s'intègrent sans toucher au modèle de blocs existant (citation = `<span>` inline, bibliographie = `<section id="bibliographie-section">` — parsée comme blocs séparés par `_parse-html.ts` via son fallback `walk()`, donc compatible export docx/pdf sans modif de `_parse-html.ts`)
+- ❌ Coût : pas de sync Zotero automatique, l'étudiant doit exporter son .bib manuellement à chaque mise à jour de sa bibliothèque
+- ⚠️ Risque : champs de source (auteur/titre/éditeur) échappés (`escapeHtml`) avant insertion dans le HTML de l'éditeur — un import BibTeX est un contenu externe non fiable, sans cet échappement un .bib malveillant aurait pu injecter du HTML/JS dans le document (XSS) au moment de citer/générer la bibliographie
+
+**Consequences** :
+- `TextePanel` passe en `forwardRef` (`TextePanelHandle.insertHtml` / `appendOrReplaceBlock`) — premier composant de l'éditeur à exposer une API impérative, pattern à réutiliser si d'autres panneaux doivent écrire dans le document
+- `ChatPanel` : le header passe de deux boutons à un `<select>` (4 personas : ia/directeur/prof/sources) — prévoir un vrai composant de tabs si un 5e onglet arrive
+- Au câblage Supabase futur : `sources` doit devenir une table scoped par section ou projet (comme `sections`/`annotations`)
+
+**Status** : `active`
+
+---
+
+## 2026-07-17 (nuit, suite) — Chat général de l'éditeur connecté à Anthropic (réflexion méthodologie)
+
+**Decision** : le Chat IA de l'éditeur, hors sélection de texte (onglet conversation libre), appelle désormais un vrai endpoint Anthropic (`POST /api/editeur/chat`) au lieu de `REPONSES_IA_MOCK`. Réutilise `MYTHESE_SYSTEM_PROMPT`/`systemBlocks()` déjà défini dans `src/lib/anthropic.ts` (coach méthodologique, jamais rédacteur) — pas de nouveau prompt, cache Anthropic préservé. Contexte envoyé : historique du chat (max 20 messages), nom + contenu HTML de la section active.
+
+**Why** :
+- Explicitement noté « hors scope » dans la décision du soir même (ligne édition chirurgicale ci-dessous) : « Toute future édition « chat général » (hors sélection) reste sur `REPONSES_IA_MOCK` » — demande directe de Jean pour lever ce hors-scope.
+- `MYTHESE_SYSTEM_PROMPT` était déjà écrit pour ce cas d'usage précis (conseil/réflexion, pas rédaction) mais jamais branché sur un endpoint réel avant ce commit.
+
+**Tradeoffs** :
+- ✅ Gain : le chat général répond désormais avec de vrais conseils méthodologiques ancrés sur la section en cours, cohérent avec le module d'édition chirurgicale déjà réel.
+- ⚠️ Risque : aucun gate ni rate-limit sur `/api/editeur/chat` (auth Supabase seulement) — même dette déjà notée pour `/api/editeur/edit-suggestion`, non comblée ici (hors scope).
+
+**Consequences** :
+- Historique du chat (`chatIa`) reste en state client uniquement, aucune persistance Supabase ajoutée — décision « prototype d'abord » toujours active.
+- Le compteur de crédit (`credit.utilise`) reste incrémenté côté client (mock), pas connecté à un vrai quota serveur.
+
+**Status** : `active`
+
+---
+
+## 2026-07-17 (nuit) — Édition live IA : chirurgicale au niveau bloc, jamais de rédaction
+
+**Decision** : le Chat IA de l'éditeur peut désormais modifier le document en direct — l'étudiant sélectionne un passage, demande une retouche, l'IA (vrai appel Anthropic via `POST /api/editeur/edit-suggestion`) propose un diff avant/après affiché **dans le bloc ciblé** (pas en fin de section), que l'étudiant accepte ou rejette. L'ancien flow « Insérer dans le document » (append aveugle en fin de section, `_editeur.tsx`/`_texte-panel.tsx` avant ce commit) est retiré.
+
+**Why** :
+- Demande explicite de Jean : « le chat IA doit interagir directement avec l'éditeur de texte... modification en direct », modèle Claude Code/Cowork appliquant un diff sur un fichier
+- ⚠️ Contradiction identifiée et tranchée AVEC Jean avant d'implémenter : `MYTHESE_SYSTEM_PROMPT` (`src/lib/anthropic.ts`) interdit explicitement à l'IA de produire de la prose à coller (« pas un rédacteur fantôme »). Décision : l'édition live reste **chirurgicale** — orthographe/grammaire/temps verbaux/clarté sur ce qui existe déjà, jamais de paragraphe inventé. Nouveau `EDIT_SYSTEM_PROMPT` séparé porte cette règle, avec refus explicite si l'instruction demande de la rédaction.
+- Unité d'édition = **bloc entier** (`<p>`, `<li>`, titre — enfant direct du conteneur `contentEditable`), pas une sous-chaîne : une tentative précédente de surlignage par recherche de sous-chaîne HTML a déjà été abandonnée le 2026-07-17 (superseded, plus bas) pour incompatibilité avec le HTML riche. Remplacer un nœud entier (`outerHTML`) est sûr ; découper à l'intérieur ne l'est pas.
+
+**Tradeoffs** :
+- ✅ Gain : édition ciblée et réversible (accepter/rejeter), garde-fou anti-ghostwriting explicite et testable
+- ❌ Coût : granularité bloc, pas phrase — une retouche sur une longue liste `<ul>` réécrit toute la liste (l'enfant direct de l'éditeur est le `<ul>`, pas le `<li>`)
+- ⚠️ Risque : aucun rate-limit dédié sur `/api/editeur/edit-suggestion` (seule l'auth Supabase protège l'endpoint) — dette à combler si abus constaté, CLAUDE.md §7 le demande mais rien d'existant à réutiliser dans le repo
+
+**Consequences** :
+- Sections/annotations/chat restent en state client mock (décision « prototype d'abord » du 2026-07-17 matin toujours active) — seul l'appel IA de suggestion est réel, aucune persistance Supabase ajoutée
+- `ChatMessage.edit?: EditProposal` relie un message du chat à sa proposition de diff ; le statut (`pending`/`accepted`/`rejected`) s'affiche dans le chat, la review se fait dans le document
+- Toute future édition « chat général » (hors sélection) reste sur `REPONSES_IA_MOCK` — hors scope de cette décision
+
+**Status** : `active`
+
+---
+
 ## 2026-07-17 (soir) — Plan de recherche gaté au niveau compte (annule partiellement la décision du matin)
 
 **Decision** : Le Plan de recherche (`/api/plan/classifier`, `/api/plan/conseil-ia`) est maintenant gaté, mais au niveau **compte** (`isAccountUnlocked`) et non projet — 0 usage gratuit, débloqué par n'importe quel paiement actif (abo 19€/mois OU un one-shot 39€, même sans projet précis associé).

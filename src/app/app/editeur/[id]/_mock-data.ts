@@ -1,4 +1,4 @@
-import type { Section, ChatMessage, CreditUsage } from "./types";
+import type { Section, ChatMessage, CreditUsage, Source } from "./types";
 
 export const SECTIONS_MOCK: Section[] = [
   {
@@ -60,22 +60,6 @@ export const SECTIONS_MOCK: Section[] = [
   { id: "conclusion", nom: "Conclusion", ordre: 6, statut: "a_revoir", contenu: "<p>Section à retravailler suite aux retours du comité.</p>", annotations: [] },
 ];
 
-export const CHAT_IA_MOCK: ChatMessage[] = [
-  {
-    id: "m1",
-    role: "user",
-    contenu: "Comment structurer ma section méthodologie pour un protocole comparatif ?",
-    timestamp: "10:12",
-  },
-  {
-    id: "m2",
-    role: "assistant",
-    contenu:
-      "Pour un protocole comparatif, structure en 4 temps : (1) hypothèses testées, (2) configurations comparées avec justification, (3) variables contrôlées, (4) critères de mesure. Veux-tu que je rédige un paragraphe d'ouverture ?",
-    timestamp: "10:12",
-  },
-];
-
 export const CHAT_PROF_MOCK: ChatMessage[] = [
   {
     id: "p1",
@@ -90,3 +74,24 @@ export const CREDIT_MOCK: CreditUsage = {
   quota: 100,
   forfait: "Forfait Étudiant — 200 messages/mois",
 };
+
+export const SOURCES_MOCK: Source[] = [
+  {
+    id: "s1",
+    auteur: "Kalashnikov, D.",
+    annee: "2023",
+    titre: "Convergence limits in naive parallel reinforcement learning",
+    editeur: "Journal of Machine Learning Research",
+    type: "Article",
+    cited: false,
+  },
+  {
+    id: "s2",
+    auteur: "Chen, L.",
+    annee: "2022",
+    titre: "Gradient stability in distributed training",
+    editeur: "",
+    type: "Article",
+    cited: false,
+  },
+];

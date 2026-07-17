@@ -24,6 +24,16 @@ export interface ChatMessage {
   role: "user" | "assistant";
   contenu: string;
   timestamp: string;
+  edit?: EditProposal;
+}
+
+export interface EditProposal {
+  id: string;
+  blocIndex: number;
+  oldHtml: string;
+  newHtml: string;
+  resume: string;
+  statut: "pending" | "accepted" | "rejected";
 }
 
 export interface CreditUsage {
@@ -33,3 +43,15 @@ export interface CreditUsage {
 }
 
 export type Role = "etudiant" | "professeur";
+
+export type SourceType = "Article" | "Ouvrage" | "Site web" | "Thèse";
+
+export interface Source {
+  id: string;
+  auteur: string;
+  annee: string;
+  titre: string;
+  editeur?: string;
+  type: SourceType;
+  cited: boolean;
+}

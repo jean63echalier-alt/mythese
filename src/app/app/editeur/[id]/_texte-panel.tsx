@@ -1,13 +1,47 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { FormatToolbar } from "./_format-toolbar";
-import type { Annotation, Role, Section } from "./types";
+import type { Annotation, EditProposal, Role, Section } from "./types";
 
 const BLOCK_TAGS = new Set(["H1", "H2", "H3", "P"]);
 
-export function TextePanel({
+export interface TextePanelHandle {
+  /** Insère du HTML au dernier point du curseur connu dans l'éditeur (ou en fin de section si aucun). */
+  insertHtml: (html: string) => void;
+  /** Insère un bloc identifié par id, ou remplace le bloc existant portant ce même id. */
+  appendOrReplaceBlock: (blockId: string, html: string) => void;
+}
+
+function resolveBloc(node: Node, editor: HTMLElement): { el: HTMLElement; index: number } | null {
+  let cur: Node | null = node;
+  while (cur && cur !== editor) {
+    if (cur.parentNode === editor && cur instanceof HTMLElement) {
+      const index = Array.from(editor.children).indexOf(cur);
+      return index === -1 ? null : { el: cur, index };
+    }
+    cur = cur.parentNode;
+  }
+  return null;
+}
+
+interface TextePanelProps {
+  section: Section;
+  role: Role;
+  activeAnnotationId: string | null;
+  onSelectAnnotation: (id: string) => void;
+  onDemanderIA: (texte: string, blocIndex: number, blocHtml: string) => void;
+  onCommenterProf: (texte: string, commentaire: string) => void;
+  onChangeStatut: (statut: Section["statut"]) => void;
+  onContentChange: (html: string) => void;
+  pendingEdit: EditProposal | null;
+  editLoadingBlocIndex: number | null;
+  onAcceptEdit: () => void;
+  onRejectEdit: () => void;
+}
+
+export const TextePanel = forwardRef<TextePanelHandle, TextePanelProps>(function TextePanel({
   section,
   role,
   activeAnnotationId,
@@ -16,22 +50,54 @@ export function TextePanel({
   onCommenterProf,
   onChangeStatut,
   onContentChange,
-  insertSignal,
-}: {
-  section: Section;
-  role: Role;
-  activeAnnotationId: string | null;
-  onSelectAnnotation: (id: string) => void;
-  onDemanderIA: (texte: string) => void;
-  onCommenterProf: (texte: string, commentaire: string) => void;
-  onChangeStatut: (statut: Section["statut"]) => void;
-  onContentChange: (html: string) => void;
-  insertSignal: { texte: string; nonce: number } | null;
-}) {
+  pendingEdit,
+  editLoadingBlocIndex,
+  onAcceptEdit,
+  onRejectEdit,
+}, ref) {
   const editorRef = useRef<HTMLDivElement>(null);
-  const [floating, setFloating] = useState<{ x: number; y: number; texte: string } | null>(null);
+  const lastRangeRef = useRef<Range | null>(null);
+  const [floating, setFloating] = useState<{ x: number; y: number; texte: string; blocIndex: number; blocHtml: string } | null>(null);
   const [commentDraft, setCommentDraft] = useState<string | null>(null);
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
+  const [editRectTop, setEditRectTop] = useState<number | null>(null);
+
+  function saveRange() {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && editorRef.current?.contains(sel.anchorNode)) {
+      lastRangeRef.current = sel.getRangeAt(0).cloneRange();
+    }
+  }
+
+  useImperativeHandle(ref, () => ({
+    insertHtml(html: string) {
+      const editor = editorRef.current;
+      if (!editor) return;
+      editor.focus();
+      const sel = window.getSelection();
+      if (lastRangeRef.current && editor.contains(lastRangeRef.current.commonAncestorContainer)) {
+        sel?.removeAllRanges();
+        sel?.addRange(lastRangeRef.current);
+      } else {
+        const r = document.createRange();
+        r.selectNodeContents(editor);
+        r.collapse(false);
+        sel?.removeAllRanges();
+        sel?.addRange(r);
+      }
+      document.execCommand("insertHTML", false, html);
+      saveRange();
+      onContentChange(editor.innerHTML);
+    },
+    appendOrReplaceBlock(blockId: string, html: string) {
+      const editor = editorRef.current;
+      if (!editor) return;
+      const existing = editor.querySelector(`#${blockId}`);
+      if (existing) existing.outerHTML = html;
+      else editor.insertAdjacentHTML("beforeend", html);
+      onContentChange(editor.innerHTML);
+    },
+  }));
 
   useEffect(() => {
     setFloating(null);
@@ -39,12 +105,33 @@ export function TextePanel({
   }, [section.id]);
 
   useEffect(() => {
-    if (!insertSignal || !editorRef.current) return;
-    const p = document.createElement("p");
-    p.textContent = insertSignal.texte;
-    editorRef.current.appendChild(p);
+    const idx = pendingEdit?.blocIndex ?? editLoadingBlocIndex;
+    if (idx == null || !editorRef.current) {
+      setEditRectTop(null);
+      return;
+    }
+    const block = editorRef.current.children[idx] as HTMLElement | undefined;
+    if (!block) {
+      setEditRectTop(null);
+      return;
+    }
+    const rect = block.getBoundingClientRect();
+    const parentRect = editorRef.current.getBoundingClientRect();
+    setEditRectTop(rect.top - parentRect.top + rect.height);
+  }, [pendingEdit, editLoadingBlocIndex]);
+
+  function handleAcceptEdit() {
+    if (!pendingEdit || !editorRef.current) return;
+    const block = editorRef.current.children[pendingEdit.blocIndex];
+    if (block) {
+      const temp = document.createElement("div");
+      temp.innerHTML = pendingEdit.newHtml;
+      const newEl = temp.firstElementChild;
+      if (newEl) block.replaceWith(newEl);
+    }
     onContentChange(editorRef.current.innerHTML);
-  }, [insertSignal]);
+    onAcceptEdit();
+  }
 
   function refreshActiveFormats() {
     const formats = new Set<string>();
@@ -65,13 +152,14 @@ export function TextePanel({
 
   function handleSelectionUp() {
     refreshActiveFormats();
+    saveRange();
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0 || !editorRef.current) {
       setFloating(null);
       return;
     }
     const range = sel.getRangeAt(0);
-    if (!editorRef.current?.contains(range.commonAncestorContainer)) {
+    if (!editorRef.current.contains(range.commonAncestorContainer)) {
       setFloating(null);
       return;
     }
@@ -80,9 +168,20 @@ export function TextePanel({
       setFloating(null);
       return;
     }
+    const bloc = resolveBloc(range.commonAncestorContainer, editorRef.current);
+    if (!bloc) {
+      setFloating(null);
+      return;
+    }
     const rect = range.getBoundingClientRect();
     const parentRect = editorRef.current.getBoundingClientRect();
-    setFloating({ x: rect.left - parentRect.left + rect.width / 2, y: rect.top - parentRect.top, texte });
+    setFloating({
+      x: rect.left - parentRect.left + rect.width / 2,
+      y: rect.top - parentRect.top,
+      texte,
+      blocIndex: bloc.index,
+      blocHtml: bloc.el.outerHTML,
+    });
   }
 
   return (
@@ -137,7 +236,7 @@ export function TextePanel({
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
-                    onDemanderIA(floating.texte);
+                    onDemanderIA(floating.texte, floating.blocIndex, floating.blocHtml);
                     setFloating(null);
                     window.getSelection()?.removeAllRanges();
                   }}
@@ -184,6 +283,48 @@ export function TextePanel({
             className="prose-mythese min-h-[50vh] text-[15px] leading-relaxed outline-none"
             dangerouslySetInnerHTML={{ __html: section.contenu || "<p><br></p>" }}
           />
+
+          {editLoadingBlocIndex != null && !pendingEdit && editRectTop != null && (
+            <div
+              className="absolute left-0 right-0 z-20 mt-1 text-xs text-[var(--color-ink-muted)] italic"
+              style={{ top: editRectTop }}
+            >
+              ✨ L'IA retouche ce passage…
+            </div>
+          )}
+
+          {pendingEdit && editRectTop != null && (
+            <div
+              className="absolute left-0 right-0 z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-paper)] shadow-md p-3 space-y-2"
+              style={{ top: editRectTop }}
+            >
+              <p className="text-xs text-[var(--color-ink-muted)]">{pendingEdit.resume}</p>
+              <div
+                className="prose-mythese text-sm line-through opacity-60"
+                dangerouslySetInnerHTML={{ __html: pendingEdit.oldHtml }}
+              />
+              <div
+                className="prose-mythese text-sm bg-green-50 rounded px-2 py-1"
+                dangerouslySetInnerHTML={{ __html: pendingEdit.newHtml }}
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleAcceptEdit}
+                  className="text-xs px-2.5 py-1 rounded-full bg-green-50 text-[var(--color-forest)] hover:bg-green-100 font-medium"
+                >
+                  ✓ Accepter
+                </button>
+                <button
+                  type="button"
+                  onClick={onRejectEdit}
+                  className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-[var(--color-burgundy)] hover:bg-red-100 font-medium"
+                >
+                  ✗ Rejeter
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {section.annotations.length > 0 && (
@@ -213,7 +354,7 @@ export function TextePanel({
       </div>
     </div>
   );
-}
+});
 
 function authorLabel(a: Annotation["auteur"]) {
   return a === "prof" ? "Professeur" : a === "ia" ? "Suggestion IA" : "Faute détectée";
