@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { searchWorks } from "@/lib/openalex";
 import { anthropic, MODELS, systemBlocks } from "@/lib/anthropic";
+import { checkGate } from "@/lib/gate";
 
 export const maxDuration = 60;
 
@@ -28,6 +29,14 @@ export async function POST(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
+  const gate = await checkGate(supabase, user.id, projectId, "searches");
+  if (!gate.allowed) {
+    return NextResponse.json(
+      { error: "quota_exceeded", message: "Ta recherche gratuite sur ce projet a déjà été utilisée." },
+      { status: 402 },
+    );
+  }
+
   // 1. Reformuler les mots-clés en query OpenAlex via Haiku
   const queryStr = await reformulateQuery(payload);
 
@@ -45,7 +54,8 @@ export async function POST(
   }
 
   // 3. Pour chaque source : résumé + pertinence via Sonnet (parallèle, batch concis)
-  const enriched = await enrichWorks(works.slice(0, 20), payload.problematique || "");
+  // Gratuit = plafonné à 10 sources (cf. pricing) ; débloqué = 20.
+  const enriched = await enrichWorks(works.slice(0, gate.unlocked ? 20 : 10), payload.problematique || "");
 
   // 4. Sauvegarder
   const { error: insertError } = await supabase.from("searches").insert({

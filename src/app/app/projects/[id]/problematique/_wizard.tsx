@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea, Label } from "@/components/ui/input";
+import { PaywallModal } from "@/components/paywall-modal";
 import { ProposalsViewer, Proposal } from "./_proposals";
 
 const QUESTIONS = [
@@ -33,6 +34,7 @@ export function Module2Wizard({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [state, setState] = useState<"asking" | "loading" | "ok" | "err">("asking");
   const [errMsg, setErrMsg] = useState("");
+  const [paywall, setPaywall] = useState(false);
 
   const current = QUESTIONS[step];
   const isLast = step === QUESTIONS.length - 1;
@@ -57,6 +59,11 @@ export function Module2Wizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers, context }),
       });
+      if (res.status === 402) {
+        setState("asking");
+        setPaywall(true);
+        return;
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Erreur");
@@ -163,6 +170,14 @@ export function Module2Wizard({
             : "Suivant →"}
         </Button>
       </div>
+
+      {paywall && (
+        <PaywallModal
+          projectId={projectId}
+          message="Ta problématique gratuite (Module 2) sur ce projet a déjà été générée."
+          onClose={() => setPaywall(false)}
+        />
+      )}
     </div>
   );
 }

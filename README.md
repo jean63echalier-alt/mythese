@@ -51,6 +51,10 @@ Idempotentes (DROP IF EXISTS / CREATE IF NOT EXISTS partout). Si tu modifies le 
    - `RESEND_FROM_EMAIL`
    - `OPENALEX_EMAIL`
    - `NEXT_PUBLIC_SITE_URL=https://mythese.com`
+   - `STRIPE_SECRET_KEY`
+   - `STRIPE_WEBHOOK_SECRET`
+   - `STRIPE_PRICE_ONE_SHOT`
+   - `STRIPE_PRICE_SUBSCRIPTION`
 3. Domaines à attacher dans Vercel : `mythese.com` (apex) + `www.mythese.com`
 4. DNS Hostinger :
    - `mythese.com` A → `76.76.21.21`
@@ -68,6 +72,19 @@ Pas activé par défaut. Pour activer :
 4. Supabase > Authentication > Providers > Google : coller les deux
 
 Sans cette étape, le bouton "Continuer avec Google" affichera une erreur. Le magic link email fonctionne dès le déploiement (Supabase l'a activé par défaut).
+
+## Activer Stripe (freemium gate — étape manuelle Jean)
+
+Gate : 1 recherche Module 1 (10 sources) + 1 génération Module 2 gratuites par projet. Au-delà, mur de paiement.
+
+1. Dashboard Stripe > Produits > créer 2 produits :
+   - **Mémoire complet** — prix unique 39 € → copier le `price_id` dans `STRIPE_PRICE_ONE_SHOT`
+   - **Doctorant** — prix récurrent 19 €/mois → copier le `price_id` dans `STRIPE_PRICE_SUBSCRIPTION`
+2. Dashboard Stripe > Développeurs > Clés API > copier la clé secrète dans `STRIPE_SECRET_KEY`
+3. Dashboard Stripe > Développeurs > Webhooks > ajouter un endpoint `https://mythese.com/api/webhooks/stripe`, événements à écouter : `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` → copier le secret de signature dans `STRIPE_WEBHOOK_SECRET`
+4. Appliquer la migration `supabase/migrations/0005_payments.sql` (table `payments` + colonnes `profiles.stripe_customer_id` / `subscription_status`)
+
+Sans cette étape, `/api/checkout` renverra une erreur 500 (clés Stripe manquantes) — les modules restent utilisables en gratuit (1 usage par projet) tant que le gate n'est pas testé.
 
 ## Stack technique
 

@@ -5,6 +5,29 @@
 
 ---
 
+## 2026-07-17 — Freemium gate + Stripe : scope Module 1/2 uniquement, pas le Plan de recherche
+
+**Decision** : Le gate freemium (1 usage gratuit par projet, puis mur 39€ one-shot / 19€ mois) s'applique à `searches` (Module 1) et `problematiques` (Module 2) — tous deux `project_id`-scoped. Le Plan de recherche (`/app/plan`, `soumissions`/`conseils_ia`) reste hors gate : il est `user_id`-scoped (cf. décision 2026-06-14), pas rattachable à un projet sans restructuration du schéma.
+
+**Why** :
+- Cohérent avec le pricing déjà verrouillé au wiki 2026-05-08 ("Découverte : 1 état de l'art 10 sources + 1 problématique")
+- Gater le Plan de recherche nécessiterait de lui ajouter un `project_id`, hors scope de cette session
+- Les coûts API réels (OpenAlex + Sonnet enrich, Sonnet propositions) sont concentrés sur Module 1/2 — le gate cible la friction là où le coût existe
+
+**Tradeoffs** :
+- ✅ Gain : gate implémentable sans toucher au schéma `plan_etapes_template`/`soumissions`, testeurs beta gardent le Plan de recherche en illimité
+- ❌ Coût : le Plan de recherche reste gratuit illimité même pour un compte jamais payant — pas de garde-fou usage sur ce module
+- ⚠️ Risque : si le Plan de recherche devient coûteux en tokens (conseils croisés Claude+GPT), revisiter le gate à ce moment
+
+**Consequences** :
+- Nouvelle table `payments` (migration `0005_payments.sql`) + `profiles.stripe_customer_id`/`subscription_status`, écriture réservée au service role (webhook)
+- `src/lib/gate.ts` : `checkGate()` réutilisable pour toute future route project-scoped à gater
+- Testeurs beta (5-20 étudiants) passent par le même gate que tout utilisateur — pas de bypass compte
+
+**Status** : `active`
+
+---
+
 ## 2026-06-14 — Plan de recherche : section globale `/app/plan`, niveau compte (pas par projet)
 
 **Decision** : Le Plan de recherche (6 étapes, progression, soumissions, conseils IA croisés) est un nouvel espace `/app/plan` scopé par `user_id`, indépendant des `projects`. Lien ajouté dans le header (`src/app/app/layout.tsx`).

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
+import { PaywallModal } from "@/components/paywall-modal";
 import { ResultsViewer } from "./_results";
 
 export interface Module1Result {
@@ -35,6 +36,7 @@ export function Module1Form({
   const [stage, setStage] = useState("");
   const [results, setResults] = useState<Module1Result[] | null>(null);
   const [errMsg, setErrMsg] = useState("");
+  const [paywall, setPaywall] = useState(false);
 
   function addKeyword() {
     const k = keywordInput.trim();
@@ -80,6 +82,11 @@ export function Module1Form({
 
       clearInterval(stageTimer);
 
+      if (res.status === 402) {
+        setState("idle");
+        setPaywall(true);
+        return;
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Erreur");
@@ -196,6 +203,14 @@ export function Module1Form({
           </h3>
           <ResultsViewer results={results} />
         </div>
+      )}
+
+      {paywall && (
+        <PaywallModal
+          projectId={projectId}
+          message="Ta recherche gratuite (Module 1) sur ce projet a déjà été utilisée."
+          onClose={() => setPaywall(false)}
+        />
       )}
     </div>
   );

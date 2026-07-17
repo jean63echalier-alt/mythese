@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { anthropic, MODELS, systemBlocks } from "@/lib/anthropic";
+import { checkGate } from "@/lib/gate";
 
 export const maxDuration = 60;
 
@@ -29,6 +30,14 @@ export async function POST(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  const gate = await checkGate(supabase, user.id, projectId, "problematiques");
+  if (!gate.allowed) {
+    return NextResponse.json(
+      { error: "quota_exceeded", message: "Ta problématique gratuite sur ce projet a déjà été générée." },
+      { status: 402 },
+    );
+  }
 
   const proposals = await generateProposals(payload);
 
